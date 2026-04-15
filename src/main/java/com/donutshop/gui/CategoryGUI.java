@@ -23,18 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CategoryGUI implements InventoryHolder, Listener {
 
-    private static final int GUI_SIZE = 54;
+    private static final int GUI_SIZE = 27;
 
     private static final int[] INNER_SLOTS = {
-        18, 19, 20, 21, 22, 23, 24, 25, 26
+        9, 10, 11, 12, 13, 14, 15, 16, 17
     };
     private static final int ITEMS_PER_PAGE = INNER_SLOTS.length;
-
-    private static final int SLOT_BACK = 45;
-    private static final int SLOT_PREV = 48;
-    private static final int SLOT_PAGE_INFO = 49;
-    private static final int SLOT_NEXT = 50;
-    private static final int SLOT_CLOSE = 53;
 
     private static final Map<UUID, Map<Integer, ConfigManager.ShopItem>> playerSlotMappings = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> storedPages = new ConcurrentHashMap<>();
@@ -126,21 +120,40 @@ public class CategoryGUI implements InventoryHolder, Listener {
 
         playerSlotMappings.put(uuid, slotMapping);
 
-        // Navigation items
-        inv.setItem(SLOT_BACK, new ItemBuilder(Material.ARROW).rawName("<gray>ʙᴀᴄᴋ").build());
+        // Navigation items (from config)
+        ConfigManager.NavigationConfig navBack = configManager.getNavBack();
+        ConfigManager.NavigationConfig navPrev = configManager.getNavPrev();
+        ConfigManager.NavigationConfig navNext = configManager.getNavNext();
+        ConfigManager.NavigationConfig navPageInfo = configManager.getNavPageInfo();
+        ConfigManager.NavigationConfig navClose = configManager.getNavClose();
 
-        if (page > 0) {
-            inv.setItem(SLOT_PREV, new ItemBuilder(Material.ARROW).rawName("<gray>ᴘʀᴇᴠɪᴏᴜs ᴘᴀɢᴇ").build());
+        if (navBack.isEnabled()) {
+            inv.setItem(navBack.getSlot(), new ItemBuilder(Material.valueOf(navBack.getMaterial()))
+                    .rawName(navBack.getName()).build());
         }
 
-        inv.setItem(SLOT_PAGE_INFO, new ItemBuilder(Material.PAPER)
-                .rawName("<gray>ᴘᴀɢᴇ " + (page + 1) + "/" + totalPages).build());
-
-        if (page < totalPages - 1) {
-            inv.setItem(SLOT_NEXT, new ItemBuilder(Material.ARROW).rawName("<gray>ɴᴇxᴛ ᴘᴀɢᴇ").build());
+        if (page > 0 && navPrev.isEnabled()) {
+            inv.setItem(navPrev.getSlot(), new ItemBuilder(Material.valueOf(navPrev.getMaterial()))
+                    .rawName(navPrev.getName()).build());
         }
 
-        inv.setItem(SLOT_CLOSE, new ItemBuilder(Material.BARRIER).rawName("<red>ᴄʟᴏsᴇ").build());
+        if (navPageInfo.isEnabled()) {
+            String pageInfoName = navPageInfo.getName()
+                    .replace("{page}", String.valueOf(page + 1))
+                    .replace("{total}", String.valueOf(totalPages));
+            inv.setItem(navPageInfo.getSlot(), new ItemBuilder(Material.valueOf(navPageInfo.getMaterial()))
+                    .rawName(pageInfoName).build());
+        }
+
+        if (page < totalPages - 1 && navNext.isEnabled()) {
+            inv.setItem(navNext.getSlot(), new ItemBuilder(Material.valueOf(navNext.getMaterial()))
+                    .rawName(navNext.getName()).build());
+        }
+
+        if (navClose.isEnabled()) {
+            inv.setItem(navClose.getSlot(), new ItemBuilder(Material.valueOf(navClose.getMaterial()))
+                    .rawName(navClose.getName()).build());
+        }
 
         player.openInventory(inv);
     }
@@ -149,32 +162,26 @@ public class CategoryGUI implements InventoryHolder, Listener {
         Material mat = Material.valueOf(shopItem.getMaterial());
         ItemBuilder builder = new ItemBuilder(mat);
 
-        if (shopItem.getName() != null) {
-            builder.rawName(shopItem.getName());
-        }
+        // Use normal formatting for item name (Title Case from material name)
+        String displayName = formatMaterialName(mat);
+        builder.rawName("<white>" + displayName);
 
-        // Build lore
+        // Build lore from configurable format
+        List<String> loreFormat = configManager.getItemLoreFormat();
         List<String> lore = new ArrayList<>();
-        lore.add("");
-
-        if (shopItem.getBuyPrice() >= 0) {
-            lore.add("<gray>ʙᴜʏ ᴘʀɪᴄᴇ: <green>" + currencySymbol + String.format("%.2f", shopItem.getBuyPrice()));
-        } else {
-            lore.add("<gray>ʙᴜʏ ᴘʀɪᴄᴇ: <red>ᴄᴀɴɴᴏᴛ ʙᴜʏ");
+        for (String line : loreFormat) {
+            String costStr = shopItem.getBuyPrice() >= 0
+                    ? currencySymbol + String.format("%.2f", shopItem.getBuyPrice())
+                    : "<red>Not for sale";
+            String sellStr = shopItem.getSellPrice() >= 0
+                    ? currencySymbol + String.format("%.2f", shopItem.getSellPrice())
+                    : "<red>Cannot sell";
+            lore.add(line
+                    .replace("{cost}", costStr)
+                    .replace("{buy}", costStr)
+                    .replace("{sell}", sellStr)
+                    .replace("{item}", displayName));
         }
-
-        if (shopItem.getSellPrice() >= 0) {
-            lore.add("<gray>sᴇʟʟ ᴘʀɪᴄᴇ: <green>" + currencySymbol + String.format("%.2f", shopItem.getSellPrice()));
-        } else {
-            lore.add("<gray>sᴇʟʟ ᴘʀɪᴄᴇ: <red>ᴄᴀɴɴᴏᴛ sᴇʟʟ");
-        }
-
-        lore.add("");
-        lore.add("<yellow>ʟᴇғᴛ-ᴄʟɪᴄᴋ <gray>ᴛᴏ ʙᴜʏ <white>1");
-        lore.add("<yellow>ʀɪɢʜᴛ-ᴄʟɪᴄᴋ <gray>ᴛᴏ sᴇʟʟ <white>1");
-        lore.add("<yellow>sʜɪғᴛ + ʟᴇғᴛ <gray>ᴛᴏ ʙᴜʏ <white>64");
-        lore.add("<yellow>sʜɪғᴛ + ʀɪɢʜᴛ <gray>ᴛᴏ sᴇʟʟ <white>64");
-        lore.add("<yellow>ᴍɪᴅᴅʟᴇ-ᴄʟɪᴄᴋ <gray>ᴛᴏ sᴇʟʟ ᴀʟʟ");
 
         builder.rawLore(lore);
 
@@ -200,14 +207,20 @@ public class CategoryGUI implements InventoryHolder, Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= GUI_SIZE) return;
 
-        // Navigation handling
-        if (slot == SLOT_BACK) {
+        // Navigation handling (config-based slots)
+        ConfigManager.NavigationConfig navBack = configManager.getNavBack();
+        ConfigManager.NavigationConfig navClose = configManager.getNavClose();
+        ConfigManager.NavigationConfig navPrev = configManager.getNavPrev();
+        ConfigManager.NavigationConfig navNext = configManager.getNavNext();
+
+        if (navBack.isEnabled() && slot == navBack.getSlot()) {
+            playSound(player, configManager.getSoundNavigate());
             player.closeInventory();
             ((DonutShop) plugin).getShopGUI().open(player);
             return;
         }
 
-        if (slot == SLOT_CLOSE) {
+        if (navClose.isEnabled() && slot == navClose.getSlot()) {
             player.closeInventory();
             return;
         }
@@ -216,14 +229,16 @@ public class CategoryGUI implements InventoryHolder, Listener {
         if (cat == null) return;
         int currentPage = storedPages.getOrDefault(uuid, 0);
 
-        if (slot == SLOT_PREV && currentPage > 0) {
+        if (navPrev.isEnabled() && slot == navPrev.getSlot() && currentPage > 0) {
+            playSound(player, configManager.getSoundNavigate());
             open(player, currentPage - 1, cat);
             return;
         }
 
-        if (slot == SLOT_NEXT) {
+        if (navNext.isEnabled() && slot == navNext.getSlot()) {
             int totalPages = Math.max(1, (int) Math.ceil((double) cat.getItems().size() / ITEMS_PER_PAGE));
             if (currentPage < totalPages - 1) {
+                playSound(player, configManager.getSoundNavigate());
                 open(player, currentPage + 1, cat);
                 return;
             }
@@ -239,22 +254,23 @@ public class CategoryGUI implements InventoryHolder, Listener {
         EconomyManager economy = ((DonutShop) plugin).getEconomyManager();
         if (economy == null || !economy.isReady()) {
             player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>ᴇᴄᴏɴᴏᴍʏ ɪs ɴᴏᴛ ᴀᴠᴀɪʟᴀʙʟᴇ!"));
+                    "<red>Economy is not available!"));
             return;
         }
 
         ClickType clickType = event.getClick();
         String currencySymbol = configManager.getCurrencySymbol();
+        int shiftAmount = configManager.getShiftClickAmount();
 
         if (clickType == ClickType.LEFT) {
             handleBuy(player, shopItem, 1, economy, currencySymbol);
         } else if (clickType == ClickType.RIGHT) {
             handleSell(player, shopItem, 1, economy, currencySymbol);
         } else if (clickType == ClickType.SHIFT_LEFT) {
-            handleBuy(player, shopItem, 64, economy, currencySymbol);
+            handleBuy(player, shopItem, shiftAmount, economy, currencySymbol);
         } else if (clickType == ClickType.SHIFT_RIGHT) {
-            handleSell(player, shopItem, 64, economy, currencySymbol);
-        } else if (clickType == ClickType.MIDDLE) {
+            handleSell(player, shopItem, shiftAmount, economy, currencySymbol);
+        } else if (clickType == ClickType.MIDDLE && configManager.isMiddleClickSellAll()) {
             handleSellAll(player, shopItem, economy, currencySymbol);
         }
     }
@@ -262,16 +278,18 @@ public class CategoryGUI implements InventoryHolder, Listener {
     private void handleBuy(Player player, ConfigManager.ShopItem shopItem, int amount,
                            EconomyManager economy, String currencySymbol) {
         if (shopItem.getBuyPrice() < 0) {
+            playSound(player, configManager.getSoundError());
             player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>ᴛʜɪs ɪᴛᴇᴍ ᴄᴀɴɴᴏᴛ ʙᴇ ᴘᴜʀᴄʜᴀsᴇᴅ!"));
+                    "<red>This item cannot be purchased!"));
             return;
         }
 
         double totalCost = shopItem.getBuyPrice() * amount;
 
         if (!economy.has(player, totalCost)) {
+            playSound(player, configManager.getSoundError());
             String msg = configManager.getMessage("not-enough-money");
-            if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
+            if (msg.isEmpty()) msg = "<red>You don't have enough money!";
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
             return;
         }
@@ -280,7 +298,8 @@ public class CategoryGUI implements InventoryHolder, Listener {
 
         // Withdraw first, then give items
         if (!economy.withdraw(player, totalCost)) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>ᴛʀᴀɴsᴀᴄᴛɪᴏɴ ғᴀɪʟᴇᴅ!"));
+            playSound(player, configManager.getSoundError());
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
             return;
         }
 
@@ -299,13 +318,15 @@ public class CategoryGUI implements InventoryHolder, Listener {
             totalCost -= refund;
 
             if (amount <= 0) {
+                playSound(player, configManager.getSoundError());
                 String msg = configManager.getMessage("inventory-full");
-                if (msg.isEmpty()) msg = "<red>ʏᴏᴜʀ ɪɴᴠᴇɴᴛᴏʀʏ ɪs ғᴜʟʟ!";
+                if (msg.isEmpty()) msg = "<red>Your inventory is full!";
                 player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
                 return;
             }
         }
 
+        playSound(player, configManager.getSoundBuy());
         String materialName = formatMaterialName(mat);
         String msg = configManager.getMessage("buy-success")
                 .replace("{amount}", String.valueOf(amount))
@@ -317,8 +338,9 @@ public class CategoryGUI implements InventoryHolder, Listener {
     private void handleSell(Player player, ConfigManager.ShopItem shopItem, int amount,
                             EconomyManager economy, String currencySymbol) {
         if (shopItem.getSellPrice() < 0) {
+            playSound(player, configManager.getSoundError());
             player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>ᴛʜɪs ɪᴛᴇᴍ ᴄᴀɴɴᴏᴛ ʙᴇ sᴏʟᴅ!"));
+                    "<red>This item cannot be sold!"));
             return;
         }
 
@@ -326,8 +348,9 @@ public class CategoryGUI implements InventoryHolder, Listener {
         int playerHas = countItems(player, mat);
 
         if (playerHas <= 0) {
+            playSound(player, configManager.getSoundError());
             String msg = configManager.getMessage("not-enough-items");
-            if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ɪᴛᴇᴍs!";
+            if (msg.isEmpty()) msg = "<red>You don't have enough items!";
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
             return;
         }
@@ -338,6 +361,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         removeItems(player, mat, toSell);
         economy.deposit(player, totalEarnings);
 
+        playSound(player, configManager.getSoundSell());
         String materialName = formatMaterialName(mat);
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(toSell))
@@ -349,8 +373,9 @@ public class CategoryGUI implements InventoryHolder, Listener {
     private void handleSellAll(Player player, ConfigManager.ShopItem shopItem,
                                EconomyManager economy, String currencySymbol) {
         if (shopItem.getSellPrice() < 0) {
+            playSound(player, configManager.getSoundError());
             player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>ᴛʜɪs ɪᴛᴇᴍ ᴄᴀɴɴᴏᴛ ʙᴇ sᴏʟᴅ!"));
+                    "<red>This item cannot be sold!"));
             return;
         }
 
@@ -358,8 +383,9 @@ public class CategoryGUI implements InventoryHolder, Listener {
         int playerHas = countItems(player, mat);
 
         if (playerHas <= 0) {
+            playSound(player, configManager.getSoundError());
             String msg = configManager.getMessage("not-enough-items");
-            if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ɪᴛᴇᴍs!";
+            if (msg.isEmpty()) msg = "<red>You don't have enough items!";
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
             return;
         }
@@ -369,12 +395,23 @@ public class CategoryGUI implements InventoryHolder, Listener {
         removeItems(player, mat, playerHas);
         economy.deposit(player, totalEarnings);
 
+        playSound(player, configManager.getSoundSell());
         String materialName = formatMaterialName(mat);
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(playerHas))
                 .replace("{item}", materialName)
                 .replace("{price}", currencySymbol + String.format("%.2f", totalEarnings));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+    }
+
+    private void playSound(Player player, String soundName) {
+        if (soundName == null || soundName.isEmpty() || soundName.equalsIgnoreCase("NONE")) return;
+        try {
+            org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName);
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        } catch (IllegalArgumentException ignored) {
+            // Invalid sound name in config — silently ignore
+        }
     }
 
     private int countItems(Player player, Material material) {

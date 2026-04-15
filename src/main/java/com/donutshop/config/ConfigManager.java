@@ -27,6 +27,25 @@ public class ConfigManager {
     private String mainMenuFillerMaterial;
     private String mainMenuFillerName;
 
+    // Category GUI navigation defaults
+    private NavigationConfig navBack;
+    private NavigationConfig navPrev;
+    private NavigationConfig navNext;
+    private NavigationConfig navPageInfo;
+    private NavigationConfig navClose;
+    private List<String> itemLoreFormat;
+
+    // Sound settings
+    private String soundBuy;
+    private String soundSell;
+    private String soundError;
+    private String soundOpenMenu;
+    private String soundNavigate;
+
+    // Transaction settings
+    private int shiftClickAmount;
+    private boolean middleClickSellAll;
+
     private final Map<String, CategoryConfig> categories = new LinkedHashMap<>();
 
     public ConfigManager(JavaPlugin plugin) {
@@ -42,6 +61,7 @@ public class ConfigManager {
         loadSettings(config);
         loadMessages(config);
         loadMainMenu(config);
+        loadCategoryGUIDefaults(config);
         loadCategories(config);
     }
 
@@ -52,6 +72,17 @@ public class ConfigManager {
         coinsEngineCurrency = config.getString("settings.coinsengine-currency", "coins");
         currencySymbol = config.getString("settings.currency-symbol", "$");
         useSmallCaps = config.getBoolean("settings.use-small-caps", true);
+
+        // Sounds
+        soundBuy = config.getString("settings.sounds.buy", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        soundSell = config.getString("settings.sounds.sell", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        soundError = config.getString("settings.sounds.error", "ENTITY_VILLAGER_NO");
+        soundOpenMenu = config.getString("settings.sounds.open-menu", "UI_BUTTON_CLICK");
+        soundNavigate = config.getString("settings.sounds.navigate", "UI_BUTTON_CLICK");
+
+        // Transactions
+        shiftClickAmount = config.getInt("settings.transactions.shift-click-amount", 64);
+        middleClickSellAll = config.getBoolean("settings.transactions.middle-click-sell-all", true);
     }
 
     // ── Messages ──────────────────────────────────────────────
@@ -70,10 +101,37 @@ public class ConfigManager {
 
     private void loadMainMenu(FileConfiguration config) {
         mainMenuTitle = config.getString("main-menu.title", "Shop");
-        mainMenuSize = config.getInt("main-menu.size", 54);
+        mainMenuSize = config.getInt("main-menu.size", 27);
         mainMenuFillerEnabled = config.getBoolean("main-menu.filler.enabled", true);
         mainMenuFillerMaterial = config.getString("main-menu.filler.material", "BLACK_STAINED_GLASS_PANE");
         mainMenuFillerName = config.getString("main-menu.filler.name", " ");
+    }
+
+    // ── Category GUI Defaults ──────────────────────────────────
+
+    private void loadCategoryGUIDefaults(FileConfiguration config) {
+        navBack = loadNavConfig(config, "category-gui.navigation.back", 18, "ARROW", "<gray>Back");
+        navPrev = loadNavConfig(config, "category-gui.navigation.previous-page", 21, "ARROW", "<gray>Previous Page");
+        navNext = loadNavConfig(config, "category-gui.navigation.next-page", 23, "ARROW", "<gray>Next Page");
+        navPageInfo = loadNavConfig(config, "category-gui.navigation.page-info", 22, "PAPER", "<gray>Page {page}/{total}");
+        navClose = loadNavConfig(config, "category-gui.navigation.close", 26, "BARRIER", "<red>Close");
+
+        itemLoreFormat = config.getStringList("category-gui.item-lore");
+        if (itemLoreFormat.isEmpty()) {
+            itemLoreFormat = new ArrayList<>();
+            itemLoreFormat.add("");
+            itemLoreFormat.add("<gray>Cost: <green>{cost}");
+        }
+    }
+
+    private NavigationConfig loadNavConfig(FileConfiguration config, String path, int defaultSlot,
+                                           String defaultMaterial, String defaultName) {
+        NavigationConfig nav = new NavigationConfig();
+        nav.enabled = config.getBoolean(path + ".enabled", true);
+        nav.slot = config.getInt(path + ".slot", defaultSlot);
+        nav.material = config.getString(path + ".material", defaultMaterial);
+        nav.name = config.getString(path + ".name", defaultName);
+        return nav;
     }
 
     // ── Categories ────────────────────────────────────────────
@@ -103,7 +161,7 @@ public class ConfigManager {
             ConfigurationSection catSection = config.getConfigurationSection("categories." + id);
             if (catSection != null) {
                 cat.guiTitle = catSection.getString("title", id);
-                cat.guiSize = catSection.getInt("size", 54);
+                cat.guiSize = catSection.getInt("size", 27);
                 cat.fillerEnabled = catSection.getBoolean("filler.enabled", true);
                 cat.fillerMaterial = catSection.getString("filler.material", "BLACK_STAINED_GLASS_PANE");
                 cat.fillerName = catSection.getString("filler.name", " ");
@@ -111,7 +169,7 @@ public class ConfigManager {
                 cat.items = loadItems(catSection);
             } else {
                 cat.guiTitle = id;
-                cat.guiSize = 54;
+                cat.guiSize = 27;
                 cat.fillerEnabled = true;
                 cat.fillerMaterial = "BLACK_STAINED_GLASS_PANE";
                 cat.fillerName = " ";
@@ -202,7 +260,41 @@ public class ConfigManager {
         return categories.get(id);
     }
 
+    // ── Category GUI navigation accessors ─────────────────────
+
+    public NavigationConfig getNavBack() { return navBack; }
+    public NavigationConfig getNavPrev() { return navPrev; }
+    public NavigationConfig getNavNext() { return navNext; }
+    public NavigationConfig getNavPageInfo() { return navPageInfo; }
+    public NavigationConfig getNavClose() { return navClose; }
+    public List<String> getItemLoreFormat() { return itemLoreFormat; }
+
+    // ── Sound accessors ───────────────────────────────────────
+
+    public String getSoundBuy() { return soundBuy; }
+    public String getSoundSell() { return soundSell; }
+    public String getSoundError() { return soundError; }
+    public String getSoundOpenMenu() { return soundOpenMenu; }
+    public String getSoundNavigate() { return soundNavigate; }
+
+    // ── Transaction accessors ─────────────────────────────────
+
+    public int getShiftClickAmount() { return shiftClickAmount; }
+    public boolean isMiddleClickSellAll() { return middleClickSellAll; }
+
     // ── Inner data classes ────────────────────────────────────
+
+    public static class NavigationConfig {
+        private boolean enabled = true;
+        private int slot;
+        private String material;
+        private String name;
+
+        public boolean isEnabled() { return enabled; }
+        public int getSlot() { return slot; }
+        public String getMaterial() { return material; }
+        public String getName() { return name; }
+    }
 
     public static class CategoryConfig {
         private String id;
