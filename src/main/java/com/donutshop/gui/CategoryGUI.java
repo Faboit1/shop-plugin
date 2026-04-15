@@ -233,6 +233,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         }
 
         if (navClose.isEnabled() && slot == navClose.getSlot()) {
+            playSound(player, configManager.getSoundNavigate());
             player.closeInventory();
             return;
         }
@@ -282,6 +283,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
                         "<red>This item cannot be purchased!"));
                 return;
             }
+            playSound(player, configManager.getSoundNavigate());
             ConfirmationGUI confirmGUI = new ConfirmationGUI(plugin, configManager);
             confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {

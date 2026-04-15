@@ -80,12 +80,21 @@ public class ShopGUI implements InventoryHolder, Listener {
         for (Map.Entry<String, ConfigManager.CategoryConfig> entry : categories.entrySet()) {
             ConfigManager.CategoryConfig cat = entry.getValue();
             if (cat.getSlot() == slot) {
+                playSound(player, configManager.getSoundNavigate());
                 // Open category GUI
                 CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
                 categoryGUI.open(player, 0, cat);
                 return;
             }
         }
+    }
+
+    private void playSound(Player player, String soundName) {
+        if (soundName == null || soundName.isEmpty() || soundName.equalsIgnoreCase("NONE")) return;
+        try {
+            org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName);
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        } catch (IllegalArgumentException ignored) {}
     }
 
     @Override
