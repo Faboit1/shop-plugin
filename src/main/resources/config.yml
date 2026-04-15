@@ -649,18 +649,7 @@ categories:
         buy-price: 30.0
         sell-price: 10.0
         slot: -1
-      - material: ANCIENT_DEBRIS
-        buy-price: 750.0
-        sell-price: 300.0
-        slot: -1
-      - material: NETHERITE_SCRAP
-        buy-price: 500.0
-        sell-price: 200.0
-        slot: -1
-      - material: NETHERITE_INGOT
-        buy-price: 2500.0
-        sell-price: 1000.0
-        slot: -1
+
 
   # ============================================================
   #  ᴇɴᴅ
@@ -715,20 +704,8 @@ categories:
         buy-price: 20.0
         sell-price: 6.0
         slot: -1
-      - material: SHULKER_SHELL
-        buy-price: 100.0
-        sell-price: 40.0
-        slot: -1
-      - material: DRAGON_BREATH
-        buy-price: 200.0
-        sell-price: 75.0
-        slot: -1
       - material: PHANTOM_MEMBRANE
         buy-price: 20.0
         sell-price: 8.0
-        slot: -1
-      - material: ELYTRA
-        buy-price: 5000.0
-        sell-price: -1
         slot: -1
 
