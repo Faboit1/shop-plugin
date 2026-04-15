@@ -20,7 +20,11 @@ public class ItemBuilder {
 
     public ItemBuilder(Material material) {
         this.item = new ItemStack(material);
-        this.meta = item.getItemMeta();
+        ItemMeta m = item.getItemMeta();
+        if (m == null) {
+            throw new IllegalArgumentException("Material " + material + " does not support item meta");
+        }
+        this.meta = m;
     }
 
     /** Set display name — text is automatically converted to small caps. */
