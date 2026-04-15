@@ -1,0 +1,1400 @@
+# ============================================================
+#  ᴅᴏɴᴜᴛsʜᴏᴘ - ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ
+#  A fully customizable DonutSMP-style shop plugin
+# ============================================================
+#
+# All text supports MiniMessage format:
+#   <red>, <green>, <blue>, <yellow>, <gray>, <white>, <gold>
+#   <gradient:#color1:#color2>text</gradient>
+#   <bold>, <italic>, <underlined>, <strikethrough>
+#
+# Small caps text is used by default. To type small caps:
+#   ᴀʙᴄᴅᴇғɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢ
+#
+# Price of -1 means the item cannot be bought/sold
+# Slot of -1 means auto-placement in available slots
+# ============================================================
+
+settings:
+  # Economy provider: "vault", "coinsengine", or "auto"
+  # "auto" will try Vault first, then CoinsEngine
+  economy-provider: "auto"
+  # CoinsEngine currency name (only used if CoinsEngine is the provider)
+  coinsengine-currency: "coins"
+  # Currency symbol for display
+  currency-symbol: "$"
+  # Whether to convert text to small caps automatically
+  use-small-caps: true
+
+# ============================================================
+#  ᴍᴇssᴀɢᴇs
+# ============================================================
+messages:
+  prefix: "<gradient:#ff6b6b:#ffa07a>ᴅᴏɴᴜᴛsʜᴏᴘ</gradient> <dark_gray>» <gray>"
+  buy-success: "{prefix}<green>ʏᴏᴜ ʙᴏᴜɢʜᴛ <white>{amount}x {item} <green>ғᴏʀ <white>{price}"
+  sell-success: "{prefix}<green>ʏᴏᴜ sᴏʟᴅ <white>{amount}x {item} <green>ғᴏʀ <white>{price}"
+  not-enough-money: "{prefix}<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!"
+  not-enough-items: "{prefix}<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ɪᴛᴇᴍs!"
+  inventory-full: "{prefix}<red>ʏᴏᴜʀ ɪɴᴠᴇɴᴛᴏʀʏ ɪs ғᴜʟʟ!"
+  no-permission: "{prefix}<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪssɪᴏɴ!"
+  shop-reloaded: "{prefix}<green>sʜᴏᴘ ᴄᴏɴғɪɢ ʀᴇʟᴏᴀᴅᴇᴅ!"
+
+# ============================================================
+#  ᴍᴀɪɴ ᴍᴇɴᴜ
+# ============================================================
+main-menu:
+  title: "<gradient:#ff6b6b:#ffa07a>         ᴅᴏɴᴜᴛ sʜᴏᴘ</gradient>"
+  size: 54
+  filler:
+    enabled: true
+    material: BLACK_STAINED_GLASS_PANE
+    name: " "
+  categories:
+    blocks:
+      slot: 10
+      icon-material: BRICKS
+      icon-name: "<gradient:#ff9a56:#ffcc80>ʙʟᴏᴄᴋs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ʙᴜɪʟᴅɪɴɢ ʙʟᴏᴄᴋs & ᴍᴀᴛᴇʀɪᴀʟs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    farming:
+      slot: 12
+      icon-material: WHEAT
+      icon-name: "<gradient:#7cfc00:#98fb98>ғᴀʀᴍɪɴɢ</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴄʀᴏᴘs & ғᴀʀᴍ ɪᴛᴇᴍs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    mob-drops:
+      slot: 14
+      icon-material: BONE
+      icon-name: "<gradient:#dda0dd:#ee82ee>ᴍᴏʙ ᴅʀᴏᴘs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴅʀᴏᴘs ғʀᴏᴍ ᴍᴏʙs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    food:
+      slot: 16
+      icon-material: COOKED_BEEF
+      icon-name: "<gradient:#ff6347:#ff4500>ғᴏᴏᴅ</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴄᴏᴏᴋᴇᴅ & ʀᴀᴡ ғᴏᴏᴅs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    ores:
+      slot: 28
+      icon-material: DIAMOND
+      icon-name: "<gradient:#00bfff:#87ceeb>ᴏʀᴇs & ᴍɪɴᴇʀᴀʟs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴠᴀʟᴜᴀʙʟᴇ ᴏʀᴇs & ɪɴɢᴏᴛs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: true
+    redstone:
+      slot: 30
+      icon-material: REDSTONE
+      icon-name: "<gradient:#ff0000:#cc0000>ʀᴇᴅsᴛᴏɴᴇ</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ʀᴇᴅsᴛᴏɴᴇ ᴄᴏᴍᴘᴏɴᴇɴᴛs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    dyes:
+      slot: 32
+      icon-material: RED_DYE
+      icon-name: "<gradient:#ff69b4:#ff1493>ᴅʏᴇs & ᴄᴏʟᴏʀs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴀʟʟ ᴅʏᴇs & ᴄᴏʟᴏʀᴇᴅ ɪᴛᴇᴍs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    miscellaneous:
+      slot: 34
+      icon-material: COMPASS
+      icon-name: "<gradient:#ffd700:#ffa500>ᴍɪsᴄᴇʟʟᴀɴᴇᴏᴜs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ᴏᴛʜᴇʀ ᴜsᴇғᴜʟ ɪᴛᴇᴍs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: false
+    treasures:
+      slot: 40
+      icon-material: NETHER_STAR
+      icon-name: "<gradient:#ffd700:#ff6347>ᴛʀᴇᴀsᴜʀᴇs</gradient>"
+      icon-lore:
+        - ""
+        - "<gray>ʀᴀʀᴇ & ᴠᴀʟᴜᴀʙʟᴇ ɪᴛᴇᴍs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: true
+
+# ============================================================
+#  ᴄᴀᴛᴇɢᴏʀɪᴇs
+#  Each category defines its GUI and items
+# ============================================================
+categories:
+
+  # ============================================================
+  #  ʙʟᴏᴄᴋs
+  # ============================================================
+  blocks:
+    title: "<gradient:#ff9a56:#ffcc80>      ʙʟᴏᴄᴋs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: STONE
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: COBBLESTONE
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: DEEPSLATE
+        buy-price: 4.0
+        sell-price: 0.6
+        slot: -1
+      - material: COBBLED_DEEPSLATE
+        buy-price: 3.0
+        sell-price: 0.4
+        slot: -1
+      - material: GRANITE
+        buy-price: 3.0
+        sell-price: 0.3
+        slot: -1
+      - material: DIORITE
+        buy-price: 3.0
+        sell-price: 0.3
+        slot: -1
+      - material: ANDESITE
+        buy-price: 3.0
+        sell-price: 0.3
+        slot: -1
+      - material: DIRT
+        buy-price: 1.0
+        sell-price: 0.1
+        slot: -1
+      - material: GRASS_BLOCK
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: SAND
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: RED_SAND
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: GRAVEL
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: CLAY
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: SANDSTONE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: SMOOTH_SANDSTONE
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: OAK_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: SPRUCE_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BIRCH_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: JUNGLE_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: ACACIA_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: DARK_OAK_LOG
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: CHERRY_LOG
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: MANGROVE_LOG
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: OAK_PLANKS
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: SPRUCE_PLANKS
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: BIRCH_PLANKS
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: BRICKS
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: STONE_BRICKS
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: MOSSY_STONE_BRICKS
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: NETHER_BRICKS
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: QUARTZ_BLOCK
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: PRISMARINE
+        buy-price: 12.0
+        sell-price: 4.0
+        slot: -1
+      - material: END_STONE
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: PURPUR_BLOCK
+        buy-price: 12.0
+        sell-price: 4.0
+        slot: -1
+      - material: OBSIDIAN
+        buy-price: 25.0
+        sell-price: 10.0
+        slot: -1
+      - material: CRYING_OBSIDIAN
+        buy-price: 50.0
+        sell-price: 20.0
+        slot: -1
+      - material: GLASS
+        buy-price: 4.0
+        sell-price: 0.5
+        slot: -1
+      - material: TERRACOTTA
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: PACKED_ICE
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: BLUE_ICE
+        buy-price: 25.0
+        sell-price: 10.0
+        slot: -1
+      - material: SOUL_SAND
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: SOUL_SOIL
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BLACKSTONE
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: BASALT
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: TUFF
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: CALCITE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: DRIPSTONE_BLOCK
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: MOSS_BLOCK
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: MUD
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: PACKED_MUD
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: MUD_BRICKS
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: SCULK
+        buy-price: 20.0
+        sell-price: 8.0
+        slot: -1
+      - material: NETHERRACK
+        buy-price: 1.0
+        sell-price: 0.1
+        slot: -1
+      - material: GLOWSTONE
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: SEA_LANTERN
+        buy-price: 20.0
+        sell-price: 8.0
+        slot: -1
+      - material: SHROOMLIGHT
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: SPONGE
+        buy-price: 50.0
+        sell-price: 20.0
+        slot: -1
+
+  # ============================================================
+  #  ғᴀʀᴍɪɴɢ
+  # ============================================================
+  farming:
+    title: "<gradient:#7cfc00:#98fb98>      ғᴀʀᴍɪɴɢ</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: WHEAT
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: WHEAT_SEEDS
+        buy-price: 1.0
+        sell-price: 0.2
+        slot: -1
+      - material: CARROT
+        buy-price: 4.0
+        sell-price: 1.5
+        slot: -1
+      - material: POTATO
+        buy-price: 4.0
+        sell-price: 1.5
+        slot: -1
+      - material: BEETROOT
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: BEETROOT_SEEDS
+        buy-price: 1.0
+        sell-price: 0.3
+        slot: -1
+      - material: MELON_SLICE
+        buy-price: 2.0
+        sell-price: 0.5
+        slot: -1
+      - material: MELON
+        buy-price: 15.0
+        sell-price: 4.0
+        slot: -1
+      - material: PUMPKIN
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: SUGAR_CANE
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: CACTUS
+        buy-price: 4.0
+        sell-price: 1.0
+        slot: -1
+      - material: BAMBOO
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: COCOA_BEANS
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: SWEET_BERRIES
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: GLOW_BERRIES
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: KELP
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: NETHER_WART
+        buy-price: 5.0
+        sell-price: 2.0
+        slot: -1
+      - material: CHORUS_FRUIT
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: BROWN_MUSHROOM
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: RED_MUSHROOM
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: EGG
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: FEATHER
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: LEATHER
+        buy-price: 5.0
+        sell-price: 2.0
+        slot: -1
+      - material: WHITE_WOOL
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: STRING
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: HONEYCOMB
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: HONEY_BOTTLE
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: VINE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: LILY_PAD
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: SEA_PICKLE
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+
+  # ============================================================
+  #  ᴍᴏʙ ᴅʀᴏᴘs
+  # ============================================================
+  mob-drops:
+    title: "<gradient:#dda0dd:#ee82ee>      ᴍᴏʙ ᴅʀᴏᴘs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: BONE
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: BONE_MEAL
+        buy-price: 2.0
+        sell-price: 0.5
+        slot: -1
+      - material: GUNPOWDER
+        buy-price: 5.0
+        sell-price: 2.0
+        slot: -1
+      - material: SPIDER_EYE
+        buy-price: 4.0
+        sell-price: 1.5
+        slot: -1
+      - material: ROTTEN_FLESH
+        buy-price: 1.0
+        sell-price: 0.2
+        slot: -1
+      - material: ENDER_PEARL
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: BLAZE_ROD
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: BLAZE_POWDER
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: GHAST_TEAR
+        buy-price: 75.0
+        sell-price: 25.0
+        slot: -1
+      - material: SLIME_BALL
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: MAGMA_CREAM
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: PHANTOM_MEMBRANE
+        buy-price: 20.0
+        sell-price: 8.0
+        slot: -1
+      - material: PRISMARINE_SHARD
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: PRISMARINE_CRYSTALS
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: INK_SAC
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: GLOW_INK_SAC
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: RABBIT_HIDE
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: RABBIT_FOOT
+        buy-price: 25.0
+        sell-price: 8.0
+        slot: -1
+      - material: SHULKER_SHELL
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: WITHER_SKELETON_SKULL
+        buy-price: 500.0
+        sell-price: 200.0
+        slot: -1
+      - material: CREEPER_HEAD
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: ZOMBIE_HEAD
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: SKELETON_SKULL
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: TRIDENT
+        buy-price: 1000.0
+        sell-price: 400.0
+        slot: -1
+      - material: NAUTILUS_SHELL
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: SCUTE
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: ARROW
+        buy-price: 2.0
+        sell-price: 0.5
+        slot: -1
+
+  # ============================================================
+  #  ғᴏᴏᴅ
+  # ============================================================
+  food:
+    title: "<gradient:#ff6347:#ff4500>      ғᴏᴏᴅ</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: BREAD
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: COOKED_BEEF
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: COOKED_PORKCHOP
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: COOKED_CHICKEN
+        buy-price: 6.0
+        sell-price: 2.0
+        slot: -1
+      - material: COOKED_MUTTON
+        buy-price: 6.0
+        sell-price: 2.0
+        slot: -1
+      - material: COOKED_RABBIT
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: COOKED_SALMON
+        buy-price: 6.0
+        sell-price: 2.0
+        slot: -1
+      - material: COOKED_COD
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: GOLDEN_APPLE
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: GOLDEN_CARROT
+        buy-price: 25.0
+        sell-price: 8.0
+        slot: -1
+      - material: CAKE
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: COOKIE
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: PUMPKIN_PIE
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: MUSHROOM_STEW
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: BEETROOT_SOUP
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: RABBIT_STEW
+        buy-price: 20.0
+        sell-price: 8.0
+        slot: -1
+      - material: APPLE
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: BEEF
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: PORKCHOP
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: CHICKEN
+        buy-price: 3.0
+        sell-price: 1.0
+        slot: -1
+      - material: MUTTON
+        buy-price: 4.0
+        sell-price: 1.0
+        slot: -1
+      - material: SALMON
+        buy-price: 4.0
+        sell-price: 1.0
+        slot: -1
+      - material: COD
+        buy-price: 3.0
+        sell-price: 0.8
+        slot: -1
+      - material: TROPICAL_FISH
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: DRIED_KELP
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: BAKED_POTATO
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: SUGAR
+        buy-price: 2.0
+        sell-price: 0.5
+        slot: -1
+
+  # ============================================================
+  #  ᴏʀᴇs & ᴍɪɴᴇʀᴀʟs
+  # ============================================================
+  ores:
+    title: "<gradient:#00bfff:#87ceeb>      ᴏʀᴇs & ᴍɪɴᴇʀᴀʟs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: COAL
+        buy-price: 5.0
+        sell-price: 2.0
+        slot: -1
+      - material: RAW_IRON
+        buy-price: 8.0
+        sell-price: 3.0
+        slot: -1
+      - material: IRON_INGOT
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: IRON_BLOCK
+        buy-price: 135.0
+        sell-price: 45.0
+        slot: -1
+      - material: RAW_COPPER
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: COPPER_INGOT
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: RAW_GOLD
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: GOLD_INGOT
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: GOLD_BLOCK
+        buy-price: 270.0
+        sell-price: 90.0
+        slot: -1
+      - material: DIAMOND
+        buy-price: 100.0
+        sell-price: 40.0
+        slot: -1
+      - material: DIAMOND_BLOCK
+        buy-price: 900.0
+        sell-price: 360.0
+        slot: -1
+      - material: EMERALD
+        buy-price: 75.0
+        sell-price: 25.0
+        slot: -1
+      - material: EMERALD_BLOCK
+        buy-price: 675.0
+        sell-price: 225.0
+        slot: -1
+      - material: LAPIS_LAZULI
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: LAPIS_BLOCK
+        buy-price: 90.0
+        sell-price: 27.0
+        slot: -1
+      - material: REDSTONE
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: REDSTONE_BLOCK
+        buy-price: 45.0
+        sell-price: 13.5
+        slot: -1
+      - material: QUARTZ
+        buy-price: 8.0
+        sell-price: 2.5
+        slot: -1
+      - material: NETHERITE_SCRAP
+        buy-price: 500.0
+        sell-price: 200.0
+        slot: -1
+      - material: NETHERITE_INGOT
+        buy-price: 2500.0
+        sell-price: 1000.0
+        slot: -1
+      - material: ANCIENT_DEBRIS
+        buy-price: 750.0
+        sell-price: 300.0
+        slot: -1
+      - material: AMETHYST_SHARD
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: COAL_BLOCK
+        buy-price: 45.0
+        sell-price: 18.0
+        slot: -1
+      - material: COPPER_BLOCK
+        buy-price: 90.0
+        sell-price: 27.0
+        slot: -1
+      - material: FLINT
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+
+  # ============================================================
+  #  ʀᴇᴅsᴛᴏɴᴇ
+  # ============================================================
+  redstone:
+    title: "<gradient:#ff0000:#cc0000>      ʀᴇᴅsᴛᴏɴᴇ</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: REDSTONE
+        buy-price: 5.0
+        sell-price: 1.5
+        slot: -1
+      - material: REDSTONE_TORCH
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: REPEATER
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: COMPARATOR
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: PISTON
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: STICKY_PISTON
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: OBSERVER
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: HOPPER
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: DROPPER
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: DISPENSER
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: TNT
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: LEVER
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: STONE_BUTTON
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: OAK_BUTTON
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: OAK_PRESSURE_PLATE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: STONE_PRESSURE_PLATE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: TRIPWIRE_HOOK
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: DAYLIGHT_DETECTOR
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: NOTE_BLOCK
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: REDSTONE_LAMP
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: TARGET
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: RAIL
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: POWERED_RAIL
+        buy-price: 25.0
+        sell-price: 8.0
+        slot: -1
+      - material: DETECTOR_RAIL
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: ACTIVATOR_RAIL
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: MINECART
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: CHEST_MINECART
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: HOPPER_MINECART
+        buy-price: 50.0
+        sell-price: 16.0
+        slot: -1
+
+  # ============================================================
+  #  ᴅʏᴇs & ᴄᴏʟᴏʀs
+  # ============================================================
+  dyes:
+    title: "<gradient:#ff69b4:#ff1493>      ᴅʏᴇs & ᴄᴏʟᴏʀs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: WHITE_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: ORANGE_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: MAGENTA_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: LIGHT_BLUE_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: YELLOW_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: LIME_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: PINK_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: GRAY_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: LIGHT_GRAY_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: CYAN_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: PURPLE_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BLUE_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BROWN_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: GREEN_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: RED_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BLACK_DYE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: WHITE_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: ORANGE_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: MAGENTA_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: LIGHT_BLUE_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: YELLOW_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: LIME_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: PINK_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: GRAY_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: LIGHT_GRAY_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: CYAN_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: PURPLE_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: BLUE_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: BROWN_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: GREEN_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: RED_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: BLACK_WOOL
+        buy-price: 8.0
+        sell-price: 2.0
+        slot: -1
+      - material: WHITE_CONCRETE
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+      - material: WHITE_STAINED_GLASS
+        buy-price: 6.0
+        sell-price: 1.5
+        slot: -1
+
+  # ============================================================
+  #  ᴍɪsᴄᴇʟʟᴀɴᴇᴏᴜs
+  # ============================================================
+  miscellaneous:
+    title: "<gradient:#ffd700:#ffa500>      ᴍɪsᴄᴇʟʟᴀɴᴇᴏᴜs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: NAME_TAG
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: SADDLE
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: LEAD
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: BOOK
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: PAPER
+        buy-price: 3.0
+        sell-price: 0.5
+        slot: -1
+      - material: WRITABLE_BOOK
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: EXPERIENCE_BOTTLE
+        buy-price: 25.0
+        sell-price: 8.0
+        slot: -1
+      - material: FIREWORK_ROCKET
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: MAP
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: CLOCK
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: COMPASS
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: SPYGLASS
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: BUCKET
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: WATER_BUCKET
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: LAVA_BUCKET
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: MILK_BUCKET
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: PAINTING
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: ITEM_FRAME
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: GLOW_ITEM_FRAME
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: FLOWER_POT
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: ARMOR_STAND
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: BONE_BLOCK
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: TORCH
+        buy-price: 2.0
+        sell-price: 0.3
+        slot: -1
+      - material: LANTERN
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: SOUL_LANTERN
+        buy-price: 15.0
+        sell-price: 5.0
+        slot: -1
+      - material: ENDER_CHEST
+        buy-price: 200.0
+        sell-price: 80.0
+        slot: -1
+      - material: CHEST
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: BARREL
+        buy-price: 12.0
+        sell-price: 4.0
+        slot: -1
+      - material: FURNACE
+        buy-price: 10.0
+        sell-price: 3.0
+        slot: -1
+      - material: BLAST_FURNACE
+        buy-price: 30.0
+        sell-price: 10.0
+        slot: -1
+      - material: SMOKER
+        buy-price: 20.0
+        sell-price: 6.0
+        slot: -1
+      - material: ANVIL
+        buy-price: 100.0
+        sell-price: 30.0
+        slot: -1
+      - material: ENCHANTING_TABLE
+        buy-price: 200.0
+        sell-price: 80.0
+        slot: -1
+      - material: BREWING_STAND
+        buy-price: 50.0
+        sell-price: 15.0
+        slot: -1
+      - material: CRAFTING_TABLE
+        buy-price: 5.0
+        sell-price: 1.0
+        slot: -1
+      - material: BELL
+        buy-price: 100.0
+        sell-price: 30.0
+        slot: -1
+      - material: LODESTONE
+        buy-price: 300.0
+        sell-price: 100.0
+        slot: -1
+      - material: RESPAWN_ANCHOR
+        buy-price: 250.0
+        sell-price: 80.0
+        slot: -1
+
+  # ============================================================
+  #  ᴛʀᴇᴀsᴜʀᴇs (ʀᴇᴘʟᴀᴄᴇs sʜᴀʀᴅs)
+  # ============================================================
+  treasures:
+    title: "<gradient:#ffd700:#ff6347>      ᴛʀᴇᴀsᴜʀᴇs</gradient>"
+    size: 54
+    filler:
+      enabled: true
+      material: BLACK_STAINED_GLASS_PANE
+      name: " "
+    items:
+      - material: ENCHANTED_GOLDEN_APPLE
+        buy-price: 5000.0
+        sell-price: 2000.0
+        slot: -1
+      - material: NETHER_STAR
+        buy-price: 10000.0
+        sell-price: 4000.0
+        slot: -1
+      - material: HEART_OF_THE_SEA
+        buy-price: 3000.0
+        sell-price: 1000.0
+        slot: -1
+      - material: TOTEM_OF_UNDYING
+        buy-price: 7500.0
+        sell-price: 3000.0
+        slot: -1
+      - material: ELYTRA
+        buy-price: 25000.0
+        sell-price: 10000.0
+        slot: -1
+      - material: BEACON
+        buy-price: 15000.0
+        sell-price: 6000.0
+        slot: -1
+      - material: CONDUIT
+        buy-price: 8000.0
+        sell-price: 3000.0
+        slot: -1
+      - material: DRAGON_BREATH
+        buy-price: 500.0
+        sell-price: 200.0
+        slot: -1
+      - material: END_CRYSTAL
+        buy-price: 2000.0
+        sell-price: 800.0
+        slot: -1
+      - material: NETHERITE_INGOT
+        buy-price: 2500.0
+        sell-price: 1000.0
+        slot: -1
+      - material: NETHERITE_BLOCK
+        buy-price: 22500.0
+        sell-price: 9000.0
+        slot: -1
+      - material: DRAGON_EGG
+        buy-price: 50000.0
+        sell-price: -1
+        slot: -1
+      - material: MUSIC_DISC_PIGSTEP
+        buy-price: 5000.0
+        sell-price: 2000.0
+        slot: -1
+      - material: SCULK_CATALYST
+        buy-price: 1000.0
+        sell-price: 400.0
+        slot: -1
+      - material: SCULK_SHRIEKER
+        buy-price: 1500.0
+        sell-price: 600.0
+        slot: -1
+      - material: SCULK_SENSOR
+        buy-price: 800.0
+        sell-price: 300.0
+        slot: -1
+      - material: RECOVERY_COMPASS
+        buy-price: 3000.0
+        sell-price: 1000.0
+        slot: -1
+      - material: ECHO_SHARD
+        buy-price: 1500.0
+        sell-price: 500.0
+        slot: -1
+      - material: DISC_FRAGMENT_5
+        buy-price: 2000.0
+        sell-price: 800.0
+        slot: -1
+      - material: GOAT_HORN
+        buy-price: 500.0
+        sell-price: 200.0
+        slot: -1

@@ -1,0 +1,33 @@
+name: DonutShop
+version: ${project.version}
+main: com.donutshop.DonutShop
+api-version: '1.21'
+description: A fully customizable DonutSMP-style shop plugin
+authors:
+  - DonutShop
+softdepend:
+  - Vault
+  - CoinsEngine
+
+commands:
+  shop:
+    description: Open the DonutShop GUI
+    usage: /<command> [category|reload]
+    permission: donutshop.use
+    aliases:
+      - donutshop
+      - ds
+
+permissions:
+  donutshop.use:
+    description: Allows access to the shop
+    default: true
+  donutshop.reload:
+    description: Allows reloading the shop config
+    default: op
+  donutshop.admin:
+    description: Full admin access
+    default: op
+    children:
+      donutshop.use: true
+      donutshop.reload: true

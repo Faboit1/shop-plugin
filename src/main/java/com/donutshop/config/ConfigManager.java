@@ -91,13 +91,13 @@ public class ConfigManager {
             CategoryConfig cat = new CategoryConfig();
             cat.id = id;
 
-            // Main-menu icon properties
+            // Main-menu icon properties (using icon- prefixed keys)
             cat.slot = iconSection.getInt("slot", 0);
-            cat.iconMaterial = iconSection.getString("material", "STONE");
-            cat.iconName = iconSection.getString("name", id);
-            cat.iconLore = iconSection.getStringList("lore");
-            cat.iconGlow = iconSection.getBoolean("glow", false);
-            cat.iconCustomModelData = iconSection.getInt("custom-model-data", -1);
+            cat.iconMaterial = iconSection.getString("icon-material", "STONE");
+            cat.iconName = iconSection.getString("icon-name", id);
+            cat.iconLore = iconSection.getStringList("icon-lore");
+            cat.iconGlow = iconSection.getBoolean("icon-glow", false);
+            cat.iconCustomModelData = iconSection.getInt("icon-custom-model-data", -1);
 
             // Category GUI properties (from categories.<id> section)
             ConfigurationSection catSection = config.getConfigurationSection("categories." + id);
@@ -108,7 +108,7 @@ public class ConfigManager {
                 cat.fillerMaterial = catSection.getString("filler.material", "BLACK_STAINED_GLASS_PANE");
                 cat.fillerName = catSection.getString("filler.name", " ");
 
-                cat.items = loadItems(catSection.getConfigurationSection("items"));
+                cat.items = loadItems(catSection);
             } else {
                 cat.guiTitle = id;
                 cat.guiSize = 54;
@@ -122,23 +122,28 @@ public class ConfigManager {
         }
     }
 
-    private List<ShopItem> loadItems(ConfigurationSection section) {
-        if (section == null) return Collections.emptyList();
+    @SuppressWarnings("unchecked")
+    private List<ShopItem> loadItems(ConfigurationSection catSection) {
+        List<?> rawList = catSection.getList("items");
+        if (rawList == null) return Collections.emptyList();
 
         List<ShopItem> items = new ArrayList<>();
-        for (String key : section.getKeys(false)) {
-            ConfigurationSection itemSec = section.getConfigurationSection(key);
-            if (itemSec == null) continue;
+        for (Object obj : rawList) {
+            if (!(obj instanceof Map)) continue;
+            Map<String, Object> map = (Map<String, Object>) obj;
 
             ShopItem item = new ShopItem();
-            item.material = itemSec.getString("material", "STONE");
-            item.name = itemSec.getString("name", null);
-            item.lore = itemSec.contains("lore") ? itemSec.getStringList("lore") : null;
-            item.buyPrice = itemSec.getDouble("buy-price", -1);
-            item.sellPrice = itemSec.getDouble("sell-price", -1);
-            item.slot = itemSec.getInt("slot", -1);
-            item.amount = itemSec.getInt("amount", 1);
-            item.customModelData = itemSec.getInt("custom-model-data", -1);
+            item.material = String.valueOf(map.getOrDefault("material", "STONE"));
+            item.name = map.containsKey("name") ? String.valueOf(map.get("name")) : null;
+            if (map.containsKey("lore") && map.get("lore") instanceof List) {
+                item.lore = ((List<?>) map.get("lore")).stream()
+                        .map(String::valueOf).collect(java.util.stream.Collectors.toList());
+            }
+            item.buyPrice = map.containsKey("buy-price") ? ((Number) map.get("buy-price")).doubleValue() : -1;
+            item.sellPrice = map.containsKey("sell-price") ? ((Number) map.get("sell-price")).doubleValue() : -1;
+            item.slot = map.containsKey("slot") ? ((Number) map.get("slot")).intValue() : -1;
+            item.amount = map.containsKey("amount") ? ((Number) map.get("amount")).intValue() : 1;
+            item.customModelData = map.containsKey("custom-model-data") ? ((Number) map.get("custom-model-data")).intValue() : -1;
 
             items.add(item);
         }
