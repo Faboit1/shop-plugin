@@ -81,7 +81,6 @@ public class ShopGUI implements InventoryHolder, Listener {
             ConfigManager.CategoryConfig cat = entry.getValue();
             if (cat.getSlot() == slot) {
                 // Open category GUI
-                player.closeInventory();
                 CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
                 categoryGUI.open(player, 0, cat);
                 return;
