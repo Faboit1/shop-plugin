@@ -89,7 +89,6 @@ public class DonutShop extends JavaPlugin {
     }
     
     public void reload() {
-        reloadConfig();
         configManager.reload();
         // Re-create economy manager with potentially new settings
         economyManager = new EconomyManager(
@@ -97,9 +96,7 @@ public class DonutShop extends JavaPlugin {
             configManager.getEconomyProvider(),
             configManager.getCoinsEngineCurrency()
         );
-        // Re-create shop GUI with new config
-        shopGUI = new ShopGUI(this, configManager);
-        // Re-register GUI events (the old ones will still fire but the new shopGUI reference is used)
-        getServer().getPluginManager().registerEvents(shopGUI, this);
+        // ShopGUI and CategoryGUI hold a reference to configManager and read it dynamically,
+        // so they do not need to be recreated or re-registered on reload.
     }
 }
