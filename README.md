@@ -4,14 +4,17 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 
 ## Features
 
-- **DonutSMP-style GUI** — Clean black glass pane borders, category icons, paginated item views
-- **9 Shop Categories** — Blocks, Farming, Mob Drops, Food, Ores & Minerals, Redstone, Dyes & Colors, Miscellaneous, Treasures
-- **Small Capital Letters** — All text displayed in Unicode small caps (ʟɪᴋᴇ ᴛʜɪs)
-- **Insanely Customizable Config** — Change all items, sections, prices, add pages, modify GUI layout, colors, and more
+- **DonutSMP-style GUI** — Clean 9×3 layout with black glass pane borders, category icons, paginated item views
+- **5 Shop Categories** — Blocks, Farming, Mob Drops, Food, Ores & Minerals
+- **Normal Item Display** — Item names shown in normal Title Case formatting with configurable cost display
+- **Insanely Customizable Config** — Change all items, sections, prices, add pages, modify GUI layout, colors, navigation buttons, sounds, and more
 - **Dual Economy Support** — Works with Vault and CoinsEngine (CoinsEngine as fallback via reflection)
 - **MiniMessage Support** — Full MiniMessage color/gradient/formatting in all text
-- **Pagination** — Automatic page system for categories with many items (28 items per page)
+- **Pagination** — Automatic page system for categories with many items (9 items per page)
 - **Buy & Sell** — Left-click to buy, right-click to sell, shift+click for stacks, middle-click to sell all
+- **Configurable Navigation** — Customize back/prev/next/close button materials, names, slots, and toggle visibility
+- **Sound Effects** — Configurable sounds for buy, sell, error, navigation, and menu open
+- **Transaction Settings** — Configurable shift-click amounts and middle-click sell-all toggle
 
 ## Commands
 
@@ -40,6 +43,10 @@ All configuration is in `config.yml`. You can customize:
 - **Categories** — Add/remove categories, change icons, lore, glow effects
 - **Shop items** — Add/remove items, set buy/sell prices, custom slots, custom model data
 - **Pages** — Items auto-paginate, or set specific slot positions
+- **Navigation buttons** — Customize material, name, slot, and visibility for back/prev/next/close/page-info
+- **Sound effects** — Configure sounds for buy, sell, error, navigation, and menu open (set to "NONE" to disable)
+- **Transaction settings** — Configure shift-click amounts and middle-click sell-all toggle
+- **Item lore format** — Customize the hover tooltip with `{cost}`, `{buy}`, `{sell}`, `{item}` placeholders
 
 ## Dependencies
 
