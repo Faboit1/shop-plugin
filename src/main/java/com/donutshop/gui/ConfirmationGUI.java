@@ -184,7 +184,6 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             case SLOT_BACK:
                 playSound(player, configManager.getSoundNavigate());
                 playerData.remove(uuid);
-                player.closeInventory();
                 CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
                 categoryGUI.open(player, data.returnPage, data.returnCategory);
                 break;

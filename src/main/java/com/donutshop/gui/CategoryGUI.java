@@ -228,7 +228,6 @@ public class CategoryGUI implements InventoryHolder, Listener {
 
         if (navBack.isEnabled() && slot == navBack.getSlot()) {
             playSound(player, configManager.getSoundNavigate());
-            player.closeInventory();
             ((DonutShop) plugin).getShopGUI().open(player);
             return;
         }
@@ -283,7 +282,6 @@ public class CategoryGUI implements InventoryHolder, Listener {
                         "<red>This item cannot be purchased!"));
                 return;
             }
-            player.closeInventory();
             ConfirmationGUI confirmGUI = new ConfirmationGUI(plugin, configManager);
             confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {
