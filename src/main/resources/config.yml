@@ -45,6 +45,8 @@ settings:
 #  ᴍᴇssᴀɢᴇs
 # ============================================================
 messages:
+  # Set to false to disable the prefix entirely
+  prefix-enabled: true
   prefix: "<gradient:#ff6b6b:#ffa07a>ᴅᴏɴᴜᴛsʜᴏᴘ</gradient> <dark_gray>» <gray>"
   buy-success: "{prefix}<green>ʏᴏᴜ ʙᴏᴜɢʜᴛ <white>{amount}x {item} <green>ғᴏʀ <white>{price}"
   sell-success: "{prefix}<green>ʏᴏᴜ sᴏʟᴅ <white>{amount}x {item} <green>ғᴏʀ <white>{price}"

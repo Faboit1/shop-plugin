@@ -19,6 +19,7 @@ public class ConfigManager {
     private String currencySymbol;
     private boolean useSmallCaps;
 
+    private boolean prefixEnabled;
     private final Map<String, String> messages = new LinkedHashMap<>();
 
     private String mainMenuTitle;
@@ -93,6 +94,7 @@ public class ConfigManager {
 
     private void loadMessages(FileConfiguration config) {
         messages.clear();
+        prefixEnabled = config.getBoolean("messages.prefix-enabled", true);
         ConfigurationSection section = config.getConfigurationSection("messages");
         if (section == null) return;
 
@@ -235,7 +237,7 @@ public class ConfigManager {
     }
 
     public String getMessage(String key) {
-        String prefix = messages.getOrDefault("prefix", "");
+        String prefix = prefixEnabled ? messages.getOrDefault("prefix", "") : "";
         String msg = messages.getOrDefault(key, "");
         return msg.replace("{prefix}", prefix);
     }

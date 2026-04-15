@@ -86,43 +86,30 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         }
 
         Material itemMat = Material.valueOf(data.shopItem.getMaterial());
-        int maxStack = itemMat.getMaxStackSize();
         int amount = data.amount;
 
         // Item display in center
         inv.setItem(SLOT_ITEM, new ItemBuilder(itemMat)
                 .rawName("<white>" + materialName)
                 .rawLore(List.of("", "<gray>ᴀᴍᴏᴜɴᴛ: <white>" + amount))
-                .amount(Math.min(amount, maxStack))
+                .amount(Math.min(amount, itemMat.getMaxStackSize()))
                 .build());
 
-        // Remove buttons (red) - only show if removing wouldn't go to 0 or below
-        if (amount - 1 >= 1) {
-            inv.setItem(SLOT_REMOVE_1, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                    .rawName("<red>-1").build());
-        }
-        if (amount - 10 >= 1) {
-            inv.setItem(SLOT_REMOVE_10, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                    .rawName("<red>-10").build());
-        }
-        if (amount - 64 >= 1) {
-            inv.setItem(SLOT_REMOVE_64, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                    .rawName("<red>-64").build());
-        }
+        // Remove buttons (red) - always visible; clicks clamp to minimum of 1
+        inv.setItem(SLOT_REMOVE_1, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
+                .rawName("<red>-1").build());
+        inv.setItem(SLOT_REMOVE_10, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
+                .rawName("<red>-10").build());
+        inv.setItem(SLOT_REMOVE_64, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
+                .rawName("<red>-64").build());
 
-        // Add buttons (lime) - only show if adding wouldn't exceed max stack
-        if (amount + 1 <= maxStack) {
-            inv.setItem(SLOT_ADD_1, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                    .rawName("<green>+1").build());
-        }
-        if (amount + 10 <= maxStack) {
-            inv.setItem(SLOT_ADD_10, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                    .rawName("<green>+10").build());
-        }
-        if (amount + 64 <= maxStack) {
-            inv.setItem(SLOT_ADD_64, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                    .rawName("<green>+64").build());
-        }
+        // Add buttons (lime) - always visible; clicks clamp to maximum of 64
+        inv.setItem(SLOT_ADD_1, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
+                .rawName("<green>+1").build());
+        inv.setItem(SLOT_ADD_10, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
+                .rawName("<green>+10").build());
+        inv.setItem(SLOT_ADD_64, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
+                .rawName("<green>+64").build());
 
         // Back button (tipped arrow of healing)
         ConfigManager.NavigationConfig navBack = configManager.getNavBack();
@@ -163,51 +150,36 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= GUI_SIZE) return;
 
-        Material itemMat = Material.valueOf(data.shopItem.getMaterial());
-        int maxStack = itemMat.getMaxStackSize();
-
         switch (slot) {
             case SLOT_REMOVE_64:
-                if (data.amount - 64 >= 1) {
-                    data.amount -= 64;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.max(1, data.amount - 64);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_REMOVE_10:
-                if (data.amount - 10 >= 1) {
-                    data.amount -= 10;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.max(1, data.amount - 10);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_REMOVE_1:
-                if (data.amount - 1 >= 1) {
-                    data.amount -= 1;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.max(1, data.amount - 1);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_ADD_1:
-                if (data.amount + 1 <= maxStack) {
-                    data.amount += 1;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.min(64, data.amount + 1);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_ADD_10:
-                if (data.amount + 10 <= maxStack) {
-                    data.amount += 10;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.min(64, data.amount + 10);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_ADD_64:
-                if (data.amount + 64 <= maxStack) {
-                    data.amount += 64;
-                    playSound(player, configManager.getSoundNavigate());
-                    refreshInventory(player, data);
-                }
+                data.amount = Math.min(64, data.amount + 64);
+                playSound(player, configManager.getSoundNavigate());
+                refreshInventory(player, data);
                 break;
             case SLOT_BACK:
                 playSound(player, configManager.getSoundNavigate());
