@@ -1,0 +1,96 @@
+package com.donutshop.gui;
+
+import com.donutshop.config.ConfigManager;
+import com.donutshop.util.ItemBuilder;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
+import java.util.Map;
+
+public class ShopGUI implements InventoryHolder, Listener {
+
+    private final JavaPlugin plugin;
+    private final ConfigManager configManager;
+
+    public ShopGUI(JavaPlugin plugin, ConfigManager configManager) {
+        this.plugin = plugin;
+        this.configManager = configManager;
+    }
+
+    public void open(Player player) {
+        int size = configManager.getMainMenuSize();
+        String title = configManager.getMainMenuTitle();
+
+        Inventory inv = Bukkit.createInventory(this, size, MiniMessage.miniMessage().deserialize(title));
+
+        // Fill with filler (black glass panes)
+        if (configManager.isMainMenuFillerEnabled()) {
+            Material fillerMat = Material.valueOf(configManager.getMainMenuFillerMaterial());
+            String fillerName = configManager.getMainMenuFillerName();
+            ItemStack filler = new ItemBuilder(fillerMat).rawName(fillerName).build();
+            for (int i = 0; i < size; i++) {
+                inv.setItem(i, filler);
+            }
+        }
+
+        // Place category icons
+        Map<String, ConfigManager.CategoryConfig> categories = configManager.getCategories();
+        for (Map.Entry<String, ConfigManager.CategoryConfig> entry : categories.entrySet()) {
+            ConfigManager.CategoryConfig cat = entry.getValue();
+            Material iconMat = Material.valueOf(cat.getIconMaterial());
+            ItemBuilder builder = new ItemBuilder(iconMat).rawName(cat.getIconName());
+            if (cat.getIconLore() != null && !cat.getIconLore().isEmpty()) {
+                builder.rawLore(cat.getIconLore());
+            }
+            if (cat.isIconGlow()) {
+                builder.glow();
+            }
+            if (cat.getIconCustomModelData() > 0) {
+                builder.customModelData(cat.getIconCustomModelData());
+            }
+            if (cat.getSlot() >= 0 && cat.getSlot() < size) {
+                inv.setItem(cat.getSlot(), builder.build());
+            }
+        }
+
+        player.openInventory(inv);
+    }
+
+    @EventHandler
+    public void onClick(InventoryClickEvent event) {
+        if (!(event.getInventory().getHolder() instanceof ShopGUI)) return;
+        event.setCancelled(true);
+
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (event.getCurrentItem() == null || event.getCurrentItem().getType() == Material.AIR) return;
+
+        int slot = event.getRawSlot();
+        if (slot < 0 || slot >= event.getInventory().getSize()) return;
+
+        // Check if clicked slot matches a category
+        Map<String, ConfigManager.CategoryConfig> categories = configManager.getCategories();
+        for (Map.Entry<String, ConfigManager.CategoryConfig> entry : categories.entrySet()) {
+            ConfigManager.CategoryConfig cat = entry.getValue();
+            if (cat.getSlot() == slot) {
+                // Open category GUI
+                player.closeInventory();
+                CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
+                categoryGUI.open(player, 0, cat);
+                return;
+            }
+        }
+    }
+
+    @Override
+    public Inventory getInventory() {
+        return null; // Not used directly
+    }
+}
