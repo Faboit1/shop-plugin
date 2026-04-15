@@ -26,10 +26,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
     private static final int GUI_SIZE = 54;
 
     private static final int[] INNER_SLOTS = {
-        10, 11, 12, 13, 14, 15, 16,
-        19, 20, 21, 22, 23, 24, 25,
-        28, 29, 30, 31, 32, 33, 34,
-        37, 38, 39, 40, 41, 42, 43
+        18, 19, 20, 21, 22, 23, 24, 25, 26
     };
     private static final int ITEMS_PER_PAGE = INNER_SLOTS.length;
 
