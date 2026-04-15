@@ -17,6 +17,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,8 +135,14 @@ public class CategoryGUI implements InventoryHolder, Listener {
         ConfigManager.NavigationConfig navClose = configManager.getNavClose();
 
         if (navBack.isEnabled()) {
-            inv.setItem(navBack.getSlot(), new ItemBuilder(Material.valueOf(navBack.getMaterial()))
-                    .rawName(navBack.getName()).build());
+            ItemBuilder backBuilder = new ItemBuilder(Material.valueOf(navBack.getMaterial()))
+                    .rawName(navBack.getName());
+            if (navBack.getPotionType() != null) {
+                try {
+                    backBuilder.potionType(PotionType.valueOf(navBack.getPotionType()));
+                } catch (IllegalArgumentException ignored) {}
+            }
+            inv.setItem(navBack.getSlot(), backBuilder.build());
         }
 
         if (page > 0 && navPrev.isEnabled()) {
@@ -268,12 +275,19 @@ public class CategoryGUI implements InventoryHolder, Listener {
         String currencySymbol = configManager.getCurrencySymbol();
         int shiftAmount = configManager.getShiftClickAmount();
 
-        if (clickType == ClickType.LEFT) {
-            handleBuy(player, shopItem, 1, economy, currencySymbol);
+        if (clickType == ClickType.LEFT || clickType == ClickType.SHIFT_LEFT) {
+            // Open confirmation GUI for buying
+            if (shopItem.getBuyPrice() < 0) {
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                        "<red>This item cannot be purchased!"));
+                return;
+            }
+            player.closeInventory();
+            ConfirmationGUI confirmGUI = new ConfirmationGUI(plugin, configManager);
+            confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {
             handleSell(player, shopItem, 1, economy, currencySymbol);
-        } else if (clickType == ClickType.SHIFT_LEFT) {
-            handleBuy(player, shopItem, shiftAmount, economy, currencySymbol);
         } else if (clickType == ClickType.SHIFT_RIGHT) {
             handleSell(player, shopItem, shiftAmount, economy, currencySymbol);
         } else if (clickType == ClickType.MIDDLE && configManager.isMiddleClickSellAll()) {

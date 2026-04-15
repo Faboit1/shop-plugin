@@ -7,6 +7,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,20 +31,20 @@ public class ItemBuilder {
 
     /** Set display name — text is automatically converted to small caps. */
     public ItemBuilder name(String name) {
-        meta.displayName(MINI.deserialize(SmallCaps.convert(name)));
+        meta.displayName(MINI.deserialize("<!italic>" + SmallCaps.convert(name)));
         return this;
     }
 
     /** Set display name without small caps conversion. */
     public ItemBuilder rawName(String name) {
-        meta.displayName(MINI.deserialize(name));
+        meta.displayName(MINI.deserialize("<!italic>" + name));
         return this;
     }
 
     /** Set lore lines — each line is converted to small caps. */
     public ItemBuilder lore(List<String> lines) {
         List<Component> lore = lines.stream()
-                .map(line -> MINI.deserialize(SmallCaps.convert(line)))
+                .map(line -> MINI.deserialize("<!italic>" + SmallCaps.convert(line)))
                 .collect(Collectors.toList());
         meta.lore(lore);
         return this;
@@ -51,7 +53,7 @@ public class ItemBuilder {
     /** Set lore lines without small caps conversion. */
     public ItemBuilder rawLore(List<String> lines) {
         List<Component> lore = lines.stream()
-                .map(MINI::deserialize)
+                .map(line -> MINI.deserialize("<!italic>" + line))
                 .collect(Collectors.toList());
         meta.lore(lore);
         return this;
@@ -71,6 +73,15 @@ public class ItemBuilder {
 
     public ItemBuilder customModelData(int data) {
         meta.setCustomModelData(data);
+        return this;
+    }
+
+    /** Set the base potion type (for tipped arrows, potions, etc.). */
+    public ItemBuilder potionType(PotionType type) {
+        if (meta instanceof PotionMeta potionMeta) {
+            potionMeta.setBasePotionType(type);
+            potionMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        }
         return this;
     }
 
