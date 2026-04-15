@@ -176,7 +176,7 @@ public class ConfigManager {
         return btn;
     }
 
-
+    // ── Categories ────────────────────────────────────────────
 
     private void loadCategories(FileConfiguration config) {
         categories.clear();
