@@ -27,6 +27,10 @@ public class ConfigManager {
     private String mainMenuFillerMaterial;
     private String mainMenuFillerName;
 
+    // Category GUI defaults
+    private String defaultFillerMaterial;
+    private String defaultFillerName;
+
     // Category GUI navigation defaults
     private NavigationConfig navBack;
     private NavigationConfig navPrev;
@@ -110,6 +114,9 @@ public class ConfigManager {
     // ── Category GUI Defaults ──────────────────────────────────
 
     private void loadCategoryGUIDefaults(FileConfiguration config) {
+        defaultFillerMaterial = config.getString("category-gui.default-filler.material", "BLACK_STAINED_GLASS_PANE");
+        defaultFillerName     = config.getString("category-gui.default-filler.name", " ");
+
         navBack = loadNavConfig(config, "category-gui.navigation.back", 18, "ARROW", "<gray>Back");
         navPrev = loadNavConfig(config, "category-gui.navigation.previous-page", 21, "ARROW", "<gray>Previous Page");
         navNext = loadNavConfig(config, "category-gui.navigation.next-page", 23, "ARROW", "<gray>Next Page");
@@ -163,16 +170,16 @@ public class ConfigManager {
                 cat.guiTitle = catSection.getString("title", id);
                 cat.guiSize = catSection.getInt("size", 27);
                 cat.fillerEnabled = catSection.getBoolean("filler.enabled", true);
-                cat.fillerMaterial = catSection.getString("filler.material", "BLACK_STAINED_GLASS_PANE");
-                cat.fillerName = catSection.getString("filler.name", " ");
+                cat.fillerMaterial = catSection.getString("filler.material", defaultFillerMaterial);
+                cat.fillerName = catSection.getString("filler.name", defaultFillerName);
 
                 cat.items = loadItems(catSection);
             } else {
                 cat.guiTitle = id;
                 cat.guiSize = 27;
                 cat.fillerEnabled = true;
-                cat.fillerMaterial = "BLACK_STAINED_GLASS_PANE";
-                cat.fillerName = " ";
+                cat.fillerMaterial = defaultFillerMaterial;
+                cat.fillerName = defaultFillerName;
                 cat.items = Collections.emptyList();
             }
 
@@ -260,14 +267,14 @@ public class ConfigManager {
         return categories.get(id);
     }
 
-    // ── Category GUI navigation accessors ─────────────────────
-
     public NavigationConfig getNavBack() { return navBack; }
     public NavigationConfig getNavPrev() { return navPrev; }
     public NavigationConfig getNavNext() { return navNext; }
     public NavigationConfig getNavPageInfo() { return navPageInfo; }
     public NavigationConfig getNavClose() { return navClose; }
     public List<String> getItemLoreFormat() { return itemLoreFormat; }
+    public String getDefaultFillerMaterial() { return defaultFillerMaterial; }
+    public String getDefaultFillerName() { return defaultFillerName; }
 
     // ── Sound accessors ───────────────────────────────────────
 
