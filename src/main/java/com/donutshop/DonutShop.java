@@ -7,6 +7,8 @@ import com.donutshop.gui.CategoryGUI;
 import com.donutshop.gui.ShopGUI;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+
 public class DonutShop extends JavaPlugin {
 
     private static DonutShop instance;
@@ -20,6 +22,15 @@ public class DonutShop extends JavaPlugin {
         
         // Save default config
         saveDefaultConfig();
+
+        // Auto-generate presets folder and preset.yml
+        File presetsFolder = new File(getDataFolder(), "presets");
+        if (!presetsFolder.exists()) {
+            presetsFolder.mkdirs();
+        }
+        if (!new File(presetsFolder, "preset.yml").exists()) {
+            saveResource("presets/preset.yml", false);
+        }
         
         // Initialize config manager
         configManager = new ConfigManager(this);
