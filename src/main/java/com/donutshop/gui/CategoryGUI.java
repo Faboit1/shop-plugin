@@ -62,8 +62,14 @@ public class CategoryGUI implements InventoryHolder, Listener {
         Inventory inv = Bukkit.createInventory(this, GUI_SIZE, MiniMessage.miniMessage().deserialize(title));
 
         // Fill entire inventory with filler panes
-        Material fillerMat = Material.BLACK_STAINED_GLASS_PANE;
-        String fillerName = " ";
+        Material fillerMat;
+        String fillerName;
+        try {
+            fillerMat = Material.valueOf(configManager.getDefaultFillerMaterial());
+        } catch (IllegalArgumentException ignored) {
+            fillerMat = Material.BLACK_STAINED_GLASS_PANE;
+        }
+        fillerName = configManager.getDefaultFillerName();
         if (category.isFillerEnabled()) {
             try {
                 fillerMat = Material.valueOf(category.getFillerMaterial());
