@@ -58,7 +58,7 @@ messages:
 #  ᴍᴀɪɴ ᴍᴇɴᴜ
 # ============================================================
 main-menu:
-  title: "<gradient:#ff6b6b:#ffa07a>         ᴅᴏɴᴜᴛ sʜᴏᴘ</gradient>"
+  title: "<gradient:#ff6b6b:#ffa07a>ᴅᴏɴᴜᴛ sʜᴏᴘ</gradient>"
   size: 27
   filler:
     enabled: true
@@ -87,11 +87,11 @@ main-menu:
       icon-glow: false
     gear:
       slot: 12
-      icon-material: IRON_SWORD
+      icon-material: TOTEM_OF_UNDYING
       icon-name: "<white>ɢᴇᴀʀ"
       icon-lore:
         - ""
-        - "<gray>ᴡᴇᴀᴘᴏɴs, ᴛᴏᴏʟs & ᴀʀᴍᴏᴜʀ"
+        - "<gray>ᴘᴠᴘ ɢᴇᴀʀ & sᴜᴘᴘʟɪᴇs"
         - ""
         - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
       icon-glow: false
@@ -130,8 +130,9 @@ category-gui:
     back:
       enabled: true
       slot: 18
-      material: ARROW
+      material: TIPPED_ARROW
       name: "<gray>Back"
+      potion-type: "HEALING"
     previous-page:
       slot: 21
       material: ARROW
@@ -145,7 +146,7 @@ category-gui:
       material: PAPER
       name: "<gray>Page {page}/{total}"
     close:
-      enabled: true
+      enabled: false
       slot: 26
       material: BARRIER
       name: "<red>Close"
@@ -154,7 +155,7 @@ category-gui:
   # Available placeholders: {cost}, {buy}, {sell}, {item}
   item-lore:
     - ""
-    - "<gray>Cost: <green>{cost}"
+    - "<italic><gray>ᴄᴏsᴛ: <green>{cost}</italic>"
 
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀɪᴇs
@@ -166,7 +167,7 @@ categories:
   #  ʙʟᴏᴄᴋs
   # ============================================================
   blocks:
-    title: "<white>      ʙʟᴏᴄᴋs"
+    title: "<white>ʙʟᴏᴄᴋs"
     size: 27
     items:
       - material: STONE
@@ -402,7 +403,7 @@ categories:
   #  ғᴏᴏᴅ
   # ============================================================
   food:
-    title: "<white>      ꜰᴏᴏᴅ"
+    title: "<white>ꜰᴏᴏᴅ"
     size: 27
     items:
       - material: BREAD
@@ -518,126 +519,52 @@ categories:
   #  ɢᴇᴀʀ
   # ============================================================
   gear:
-    title: "<white>      ɢᴇᴀʀ"
+    title: "<white>ɢᴇᴀʀ"
     size: 27
     items:
-      # ── weapons ─────────────────────────────────────────────
-      - material: WOODEN_SWORD
-        buy-price: 5.0
-        sell-price: 1.0
+      # ── ᴘᴠᴘ ɢᴇᴀʀ & sᴜᴘᴘʟɪᴇs ──────────────────────────────
+      - material: END_CRYSTAL
+        buy-price: 200.0
+        sell-price: 60.0
         slot: -1
-      - material: STONE_SWORD
-        buy-price: 10.0
-        sell-price: 3.0
+      - material: RESPAWN_ANCHOR
+        buy-price: 500.0
+        sell-price: 150.0
         slot: -1
-      - material: IRON_SWORD
+      - material: OBSIDIAN
+        buy-price: 25.0
+        sell-price: 10.0
+        slot: -1
+      - material: TOTEM_OF_UNDYING
+        buy-price: 1500.0
+        sell-price: 500.0
+        slot: -1
+      - material: ENDER_PEARL
         buy-price: 50.0
         sell-price: 15.0
         slot: -1
-      - material: GOLDEN_SWORD
-        buy-price: 30.0
-        sell-price: 8.0
+      - material: ENCHANTED_GOLDEN_APPLE
+        buy-price: 1000.0
+        sell-price: 350.0
         slot: -1
-      - material: DIAMOND_SWORD
-        buy-price: 250.0
-        sell-price: 80.0
-        slot: -1
-      - material: NETHERITE_SWORD
-        buy-price: 3000.0
-        sell-price: 1000.0
-        slot: -1
-      - material: BOW
-        buy-price: 40.0
-        sell-price: 12.0
-        slot: -1
-      - material: CROSSBOW
-        buy-price: 80.0
-        sell-price: 25.0
-        slot: -1
-      - material: SHIELD
-        buy-price: 60.0
-        sell-price: 18.0
-        slot: -1
-      # ── tools ───────────────────────────────────────────────
-      - material: IRON_PICKAXE
-        buy-price: 60.0
-        sell-price: 18.0
-        slot: -1
-      - material: DIAMOND_PICKAXE
-        buy-price: 300.0
-        sell-price: 100.0
-        slot: -1
-      - material: IRON_AXE
-        buy-price: 55.0
-        sell-price: 16.0
-        slot: -1
-      - material: DIAMOND_AXE
-        buy-price: 280.0
-        sell-price: 90.0
-        slot: -1
-      - material: IRON_SHOVEL
-        buy-price: 45.0
-        sell-price: 13.0
-        slot: -1
-      - material: IRON_HOE
-        buy-price: 40.0
-        sell-price: 12.0
-        slot: -1
-      - material: FISHING_ROD
-        buy-price: 20.0
+      - material: GLOWSTONE
+        buy-price: 15.0
         sell-price: 5.0
         slot: -1
-      - material: FLINT_AND_STEEL
-        buy-price: 15.0
-        sell-price: 4.0
+      - material: GOLDEN_APPLE
+        buy-price: 100.0
+        sell-price: 40.0
         slot: -1
-      - material: SHEARS
-        buy-price: 25.0
-        sell-price: 7.0
-        slot: -1
-      # ── armour ──────────────────────────────────────────────
-      - material: IRON_HELMET
-        buy-price: 80.0
-        sell-price: 25.0
-        slot: -1
-      - material: IRON_CHESTPLATE
-        buy-price: 160.0
-        sell-price: 50.0
-        slot: -1
-      - material: IRON_LEGGINGS
-        buy-price: 140.0
-        sell-price: 45.0
-        slot: -1
-      - material: IRON_BOOTS
-        buy-price: 80.0
-        sell-price: 25.0
-        slot: -1
-      - material: DIAMOND_HELMET
-        buy-price: 400.0
-        sell-price: 130.0
-        slot: -1
-      - material: DIAMOND_CHESTPLATE
-        buy-price: 800.0
-        sell-price: 260.0
-        slot: -1
-      - material: DIAMOND_LEGGINGS
-        buy-price: 700.0
-        sell-price: 220.0
-        slot: -1
-      - material: DIAMOND_BOOTS
-        buy-price: 400.0
-        sell-price: 130.0
-        slot: -1
-      - material: SADDLE
-        buy-price: 50.0
-        sell-price: 15.0
+      - material: EXPERIENCE_BOTTLE
+        buy-price: 20.0
+        sell-price: 6.0
         slot: -1
 
   # ============================================================
   #  ɴᴇᴛʜᴇʀ
   # ============================================================
   nether:
-    title: "<white>      ɴᴇᴛʜᴇʀ"
+    title: "<white>ɴᴇᴛʜᴇʀ"
     size: 27
     items:
       # ── blocks ──────────────────────────────────────────────
@@ -722,24 +649,13 @@ categories:
         buy-price: 30.0
         sell-price: 10.0
         slot: -1
-      - material: ANCIENT_DEBRIS
-        buy-price: 750.0
-        sell-price: 300.0
-        slot: -1
-      - material: NETHERITE_SCRAP
-        buy-price: 500.0
-        sell-price: 200.0
-        slot: -1
-      - material: NETHERITE_INGOT
-        buy-price: 2500.0
-        sell-price: 1000.0
-        slot: -1
+
 
   # ============================================================
   #  ᴇɴᴅ
   # ============================================================
   end:
-    title: "<white>      ᴇɴᴅ"
+    title: "<white>ᴇɴᴅ"
     size: 27
     items:
       # ── blocks ──────────────────────────────────────────────
@@ -788,20 +704,8 @@ categories:
         buy-price: 20.0
         sell-price: 6.0
         slot: -1
-      - material: SHULKER_SHELL
-        buy-price: 100.0
-        sell-price: 40.0
-        slot: -1
-      - material: DRAGON_BREATH
-        buy-price: 200.0
-        sell-price: 75.0
-        slot: -1
       - material: PHANTOM_MEMBRANE
         buy-price: 20.0
         sell-price: 8.0
-        slot: -1
-      - material: ELYTRA
-        buy-price: 5000.0
-        sell-price: -1
         slot: -1
 

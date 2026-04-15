@@ -4,6 +4,7 @@ import com.donutshop.commands.ShopCommand;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
 import com.donutshop.gui.CategoryGUI;
+import com.donutshop.gui.ConfirmationGUI;
 import com.donutshop.gui.ShopGUI;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -55,6 +56,7 @@ public class DonutShop extends JavaPlugin {
         // Register events
         getServer().getPluginManager().registerEvents(shopGUI, this);
         getServer().getPluginManager().registerEvents(new CategoryGUI(this, configManager), this);
+        getServer().getPluginManager().registerEvents(new ConfirmationGUI(this, configManager), this);
         
         // Register commands
         ShopCommand shopCommand = new ShopCommand(this);

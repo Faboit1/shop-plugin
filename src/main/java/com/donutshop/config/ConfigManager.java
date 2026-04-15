@@ -138,6 +138,7 @@ public class ConfigManager {
         nav.slot = config.getInt(path + ".slot", defaultSlot);
         nav.material = config.getString(path + ".material", defaultMaterial);
         nav.name = config.getString(path + ".name", defaultName);
+        nav.potionType = config.getString(path + ".potion-type", null);
         return nav;
     }
 
@@ -296,11 +297,13 @@ public class ConfigManager {
         private int slot;
         private String material;
         private String name;
+        private String potionType;
 
         public boolean isEnabled() { return enabled; }
         public int getSlot() { return slot; }
         public String getMaterial() { return material; }
         public String getName() { return name; }
+        public String getPotionType() { return potionType; }
     }
 
     public static class CategoryConfig {
