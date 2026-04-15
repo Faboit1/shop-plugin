@@ -40,6 +40,16 @@ public class ConfigManager {
     private NavigationConfig navClose;
     private List<String> itemLoreFormat;
 
+    // Confirmation GUI button icons
+    private ButtonConfig confirmDecrease1;
+    private ButtonConfig confirmDecrease10;
+    private ButtonConfig confirmDecrease64;
+    private ButtonConfig confirmIncrease1;
+    private ButtonConfig confirmIncrease10;
+    private ButtonConfig confirmIncrease64;
+    private ButtonConfig confirmCostInfo;
+    private ButtonConfig confirmConfirmBtn;
+
     // Sound settings
     private String soundBuy;
     private String soundSell;
@@ -67,6 +77,7 @@ public class ConfigManager {
         loadMessages(config);
         loadMainMenu(config);
         loadCategoryGUIDefaults(config);
+        loadConfirmationGUI(config);
         loadCategories(config);
     }
 
@@ -142,6 +153,27 @@ public class ConfigManager {
         nav.name = config.getString(path + ".name", defaultName);
         nav.potionType = config.getString(path + ".potion-type", null);
         return nav;
+    }
+
+    // ── Confirmation GUI ──────────────────────────────────────
+
+    private void loadConfirmationGUI(FileConfiguration config) {
+        confirmDecrease1  = loadButtonConfig(config, "confirmation-gui.decrease-1",  "RED_STAINED_GLASS_PANE", "<red>-1");
+        confirmDecrease10 = loadButtonConfig(config, "confirmation-gui.decrease-10", "RED_STAINED_GLASS_PANE", "<red>-10");
+        confirmDecrease64 = loadButtonConfig(config, "confirmation-gui.decrease-64", "RED_STAINED_GLASS_PANE", "<red>-64");
+        confirmIncrease1  = loadButtonConfig(config, "confirmation-gui.increase-1",  "LIME_STAINED_GLASS_PANE", "<green>+1");
+        confirmIncrease10 = loadButtonConfig(config, "confirmation-gui.increase-10", "LIME_STAINED_GLASS_PANE", "<green>+10");
+        confirmIncrease64 = loadButtonConfig(config, "confirmation-gui.increase-64", "LIME_STAINED_GLASS_PANE", "<green>+64");
+        confirmCostInfo   = loadButtonConfig(config, "confirmation-gui.cost-info",   "PAPER", "<gray>ᴛᴏᴛᴀʟ ᴄᴏsᴛ");
+        confirmConfirmBtn = loadButtonConfig(config, "confirmation-gui.confirm",      "LIME_STAINED_GLASS_PANE", "<green>ᴄᴏɴғɪʀᴍ ᴘᴜʀᴄʜᴀsᴇ");
+    }
+
+    private ButtonConfig loadButtonConfig(FileConfiguration config, String path,
+                                          String defaultMaterial, String defaultName) {
+        ButtonConfig btn = new ButtonConfig();
+        btn.material = config.getString(path + ".material", defaultMaterial);
+        btn.name = config.getString(path + ".name", defaultName);
+        return btn;
     }
 
     // ── Categories ────────────────────────────────────────────
@@ -279,6 +311,17 @@ public class ConfigManager {
     public String getDefaultFillerMaterial() { return defaultFillerMaterial; }
     public String getDefaultFillerName() { return defaultFillerName; }
 
+    // ── Confirmation GUI accessors ────────────────────────────
+
+    public ButtonConfig getConfirmDecrease1()  { return confirmDecrease1; }
+    public ButtonConfig getConfirmDecrease10() { return confirmDecrease10; }
+    public ButtonConfig getConfirmDecrease64() { return confirmDecrease64; }
+    public ButtonConfig getConfirmIncrease1()  { return confirmIncrease1; }
+    public ButtonConfig getConfirmIncrease10() { return confirmIncrease10; }
+    public ButtonConfig getConfirmIncrease64() { return confirmIncrease64; }
+    public ButtonConfig getConfirmCostInfo()   { return confirmCostInfo; }
+    public ButtonConfig getConfirmConfirmBtn() { return confirmConfirmBtn; }
+
     // ── Sound accessors ───────────────────────────────────────
 
     public String getSoundBuy() { return soundBuy; }
@@ -356,5 +399,13 @@ public class ConfigManager {
         public int getSlot() { return slot; }
         public int getAmount() { return amount; }
         public int getCustomModelData() { return customModelData; }
+    }
+
+    public static class ButtonConfig {
+        private String material;
+        private String name;
+
+        public String getMaterial() { return material; }
+        public String getName() { return name; }
     }
 }

@@ -95,41 +95,41 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 .amount(Math.min(amount, itemMat.getMaxStackSize()))
                 .build());
 
-        // Remove buttons (red) - always visible; clicks clamp to minimum of 1
-        inv.setItem(SLOT_REMOVE_1, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                .rawName("<red>-1").build());
-        inv.setItem(SLOT_REMOVE_10, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                .rawName("<red>-10").build());
-        inv.setItem(SLOT_REMOVE_64, new ItemBuilder(Material.RED_STAINED_GLASS_PANE)
-                .rawName("<red>-64").build());
+        // Remove buttons - always visible; clicks clamp to minimum of 1
+        inv.setItem(SLOT_REMOVE_1, buildButton(configManager.getConfirmDecrease1()));
+        inv.setItem(SLOT_REMOVE_10, buildButton(configManager.getConfirmDecrease10()));
+        inv.setItem(SLOT_REMOVE_64, buildButton(configManager.getConfirmDecrease64()));
 
-        // Add buttons (lime) - always visible; clicks clamp to maximum of 64
-        inv.setItem(SLOT_ADD_1, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                .rawName("<green>+1").build());
-        inv.setItem(SLOT_ADD_10, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                .rawName("<green>+10").build());
-        inv.setItem(SLOT_ADD_64, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                .rawName("<green>+64").build());
+        // Add buttons - always visible; clicks clamp to maximum of 64
+        inv.setItem(SLOT_ADD_1, buildButton(configManager.getConfirmIncrease1()));
+        inv.setItem(SLOT_ADD_10, buildButton(configManager.getConfirmIncrease10()));
+        inv.setItem(SLOT_ADD_64, buildButton(configManager.getConfirmIncrease64()));
 
-        // Back button (tipped arrow of healing)
+        // Back button (uses category-gui.navigation.back config)
         ConfigManager.NavigationConfig navBack = configManager.getNavBack();
-        ItemBuilder backBuilder = new ItemBuilder(Material.TIPPED_ARROW)
-                .rawName("<gray>Back")
-                .potionType(PotionType.HEALING);
+        ItemBuilder backBuilder = new ItemBuilder(parseMaterial(navBack.getMaterial(), Material.TIPPED_ARROW))
+                .rawName(navBack.getName());
+        if (navBack.getPotionType() != null) {
+            try {
+                backBuilder.potionType(PotionType.valueOf(navBack.getPotionType()));
+            } catch (IllegalArgumentException ignored) {}
+        }
         inv.setItem(SLOT_BACK, backBuilder.build());
 
         // Cost info
         String currencySymbol = configManager.getCurrencySymbol();
         double totalCost = data.shopItem.getBuyPrice() * amount;
-        inv.setItem(SLOT_COST_INFO, new ItemBuilder(Material.PAPER)
-                .rawName("<gray>ᴛᴏᴛᴀʟ ᴄᴏsᴛ")
+        ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
+        inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
+                .rawName(costInfoBtn.getName())
                 .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: <green>" + currencySymbol +
                         String.format("%.2f", totalCost) + "</italic>"))
                 .build());
 
         // Confirm button
-        inv.setItem(SLOT_CONFIRM, new ItemBuilder(Material.LIME_STAINED_GLASS_PANE)
-                .rawName("<green>ᴄᴏɴғɪʀᴍ ᴘᴜʀᴄʜᴀsᴇ")
+        ConfigManager.ButtonConfig confirmBtn = configManager.getConfirmConfirmBtn();
+        inv.setItem(SLOT_CONFIRM, new ItemBuilder(parseMaterial(confirmBtn.getMaterial(), Material.LIME_STAINED_GLASS_PANE))
+                .rawName(confirmBtn.getName())
                 .rawLore(List.of("", "<gray>ᴄʟɪᴄᴋ ᴛᴏ ʙᴜʏ <white>" + amount + "x " + materialName))
                 .build());
 
@@ -273,6 +273,20 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName);
             player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
         } catch (IllegalArgumentException ignored) {}
+    }
+
+    private ItemStack buildButton(ConfigManager.ButtonConfig btn) {
+        return new ItemBuilder(parseMaterial(btn.getMaterial(), Material.STONE))
+                .rawName(btn.getName())
+                .build();
+    }
+
+    private Material parseMaterial(String name, Material fallback) {
+        try {
+            return Material.valueOf(name);
+        } catch (IllegalArgumentException ignored) {
+            return fallback;
+        }
     }
 
     private String formatMaterialName(Material material) {

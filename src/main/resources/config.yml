@@ -160,6 +160,40 @@ category-gui:
     - "<italic><gray>ᴄᴏsᴛ: <green>{cost}</italic>"
 
 # ============================================================
+#  ᴄᴏɴғɪʀᴍᴀᴛɪᴏɴ ɢᴜɪ
+#  Configures icons shown in the buy confirmation screen
+# ============================================================
+confirmation-gui:
+  # Decrease amount buttons
+  decrease-1:
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>-1"
+  decrease-10:
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>-10"
+  decrease-64:
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>-64"
+  # Increase amount buttons
+  increase-1:
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>+1"
+  increase-10:
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>+10"
+  increase-64:
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>+64"
+  # Cost info display item
+  cost-info:
+    material: PAPER
+    name: "<gray>ᴛᴏᴛᴀʟ ᴄᴏsᴛ"
+  # Confirm purchase button
+  confirm:
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>ᴄᴏɴғɪʀᴍ ᴘᴜʀᴄʜᴀsᴇ"
+
+# ============================================================
 #  ᴄᴀᴛᴇɢᴏʀɪᴇs
 #  Each category defines its GUI and items
 # ============================================================
