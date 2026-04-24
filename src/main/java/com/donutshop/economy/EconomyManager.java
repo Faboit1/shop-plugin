@@ -1,5 +1,6 @@
 package com.donutshop.economy;
 
+import com.donutshop.util.NumberFormatter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -182,6 +183,6 @@ public class EconomyManager {
         if (provider.equals("vault") && vaultEconomy != null) {
             return vaultEconomy.format(amount);
         }
-        return String.format("$%.2f", amount);
+        return "$" + NumberFormatter.format(amount);
     }
 }

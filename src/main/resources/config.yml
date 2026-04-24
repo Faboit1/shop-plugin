@@ -57,6 +57,54 @@ messages:
   shop-reloaded: "{prefix}<green>sʜᴏᴘ ᴄᴏɴғɪɢ ʀᴇʟᴏᴀᴅᴇᴅ!"
 
 # ============================================================
+#  ʜᴏᴜʀʟʏ sʜᴏᴘ
+#  A rotating selection of items that refreshes every hour,
+#  exactly when the clock turns (e.g. 13:00, 14:00 …).
+#  The item pool is defined in hourly-items.yml.
+# ============================================================
+hourly-shop:
+  enabled: true
+
+  # Slot in the main menu where the "Hourly Shop" button appears.
+  # Default: 4 (top row, centre — above the category row in a 27-slot GUI).
+  featured-slot: 4
+
+  # Title of the hourly shop sub-GUI
+  gui-title: "<gradient:#ff6b6b:#ffa07a>ʜᴏᴜʀʟʏ sʜᴏᴘ</gradient>"
+
+  # How many items are picked from the pool each hour
+  item-count: 3
+
+  # Slots inside the hourly shop GUI where the picked items appear.
+  # Number of entries should match item-count.
+  item-slots:
+    - 11
+    - 13
+    - 15
+
+  # The button shown in the main menu at featured-slot
+  button:
+    material: CLOCK
+    name: "<yellow>⭐ ʜᴏᴜʀʟʏ sʜᴏᴘ"
+    lore:
+      - ""
+      - "<gray>ɴᴇᴡ ɪᴛᴇᴍs ᴇᴠᴇʀʏ ʜᴏᴜʀ!"
+      - ""
+      - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+    glow: true
+
+  # Rare-item settings
+  # An item is "rare" when its weight is ≤ this % of the total pool weight.
+  # Rare items trigger a server-wide chat announcement + sound.
+  rare:
+    threshold-percent: 5.0
+    # {names} = comma-separated list of rare item display names (colors stripped)
+    announcement: "&d&l{names} &d&lis in the hourly shop!!"
+    sound: "ENTITY_ENDER_DRAGON_GROWL"
+    sound-volume: 1.0
+    sound-pitch: 1.0
+
+# ============================================================
 #  ᴍᴀɪɴ ᴍᴇɴᴜ
 # ============================================================
 main-menu:

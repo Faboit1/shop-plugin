@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +62,22 @@ public class ConfigManager {
     private int shiftClickAmount;
     private boolean middleClickSellAll;
 
+    // Hourly shop settings
+    private boolean hourlyShopEnabled;
+    private int hourlyShopFeaturedSlot;
+    private String hourlyShopGuiTitle;
+    private int hourlyShopItemCount;
+    private List<Integer> hourlyShopItemSlots;
+    private String hourlyShopButtonMaterial;
+    private String hourlyShopButtonName;
+    private List<String> hourlyShopButtonLore;
+    private boolean hourlyShopButtonGlow;
+    private double hourlyRareThresholdPercent;
+    private String hourlyRareAnnouncement;
+    private String hourlyRareSound;
+    private double hourlyRareSoundVolume;
+    private double hourlyRareSoundPitch;
+
     private final Map<String, CategoryConfig> categories = new LinkedHashMap<>();
 
     public ConfigManager(JavaPlugin plugin) {
@@ -79,6 +96,7 @@ public class ConfigManager {
         loadCategoryGUIDefaults(config);
         loadConfirmationGUI(config);
         loadCategories(config);
+        loadHourlyShop(config);
     }
 
     // ── Settings ──────────────────────────────────────────────
@@ -174,6 +192,39 @@ public class ConfigManager {
         btn.material = config.getString(path + ".material", defaultMaterial);
         btn.name = config.getString(path + ".name", defaultName);
         return btn;
+    }
+
+    // ── Hourly Shop ───────────────────────────────────────────
+
+    private void loadHourlyShop(FileConfiguration config) {
+        hourlyShopEnabled = config.getBoolean("hourly-shop.enabled", true);
+        hourlyShopFeaturedSlot = config.getInt("hourly-shop.featured-slot", 4);
+        hourlyShopGuiTitle = config.getString("hourly-shop.gui-title",
+                "<gradient:#ff6b6b:#ffa07a>ʜᴏᴜʀʟʏ sʜᴏᴘ</gradient>");
+        hourlyShopItemCount = config.getInt("hourly-shop.item-count", 3);
+
+        List<?> rawSlots = config.getList("hourly-shop.item-slots");
+        hourlyShopItemSlots = new ArrayList<>();
+        if (rawSlots != null) {
+            for (Object o : rawSlots) {
+                if (o instanceof Number) hourlyShopItemSlots.add(((Number) o).intValue());
+            }
+        }
+        if (hourlyShopItemSlots.isEmpty()) {
+            hourlyShopItemSlots = Arrays.asList(11, 13, 15);
+        }
+
+        hourlyShopButtonMaterial = config.getString("hourly-shop.button.material", "CLOCK");
+        hourlyShopButtonName = config.getString("hourly-shop.button.name", "<yellow>⭐ ʜᴏᴜʀʟʏ sʜᴏᴘ");
+        hourlyShopButtonLore = config.getStringList("hourly-shop.button.lore");
+        hourlyShopButtonGlow = config.getBoolean("hourly-shop.button.glow", true);
+
+        hourlyRareThresholdPercent = config.getDouble("hourly-shop.rare.threshold-percent", 5.0);
+        hourlyRareAnnouncement = config.getString("hourly-shop.rare.announcement",
+                "&d&l{names} &d&lis in the hourly shop!!");
+        hourlyRareSound = config.getString("hourly-shop.rare.sound", "ENTITY_ENDER_DRAGON_GROWL");
+        hourlyRareSoundVolume = config.getDouble("hourly-shop.rare.sound-volume", 1.0);
+        hourlyRareSoundPitch = config.getDouble("hourly-shop.rare.sound-pitch", 1.0);
     }
 
     // ── Categories ────────────────────────────────────────────
@@ -334,6 +385,23 @@ public class ConfigManager {
 
     public int getShiftClickAmount() { return shiftClickAmount; }
     public boolean isMiddleClickSellAll() { return middleClickSellAll; }
+
+    // ── Hourly shop accessors ─────────────────────────────────
+
+    public boolean isHourlyShopEnabled() { return hourlyShopEnabled; }
+    public int getHourlyShopFeaturedSlot() { return hourlyShopFeaturedSlot; }
+    public String getHourlyShopGuiTitle() { return hourlyShopGuiTitle; }
+    public int getHourlyShopItemCount() { return hourlyShopItemCount; }
+    public List<Integer> getHourlyShopItemSlots() { return hourlyShopItemSlots; }
+    public String getHourlyShopButtonMaterial() { return hourlyShopButtonMaterial; }
+    public String getHourlyShopButtonName() { return hourlyShopButtonName; }
+    public List<String> getHourlyShopButtonLore() { return hourlyShopButtonLore; }
+    public boolean isHourlyShopButtonGlow() { return hourlyShopButtonGlow; }
+    public double getHourlyRareThresholdPercent() { return hourlyRareThresholdPercent; }
+    public String getHourlyRareAnnouncement() { return hourlyRareAnnouncement; }
+    public String getHourlyRareSound() { return hourlyRareSound; }
+    public double getHourlyRareSoundVolume() { return hourlyRareSoundVolume; }
+    public double getHourlyRareSoundPitch() { return hourlyRareSoundPitch; }
 
     // ── Inner data classes ────────────────────────────────────
 

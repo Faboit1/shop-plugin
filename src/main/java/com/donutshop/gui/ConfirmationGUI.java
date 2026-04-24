@@ -4,6 +4,7 @@ import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
 import com.donutshop.util.ItemBuilder;
+import com.donutshop.util.NumberFormatter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -123,7 +124,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
                 .rawName(costInfoBtn.getName())
                 .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: <green>" + currencySymbol +
-                        String.format("%.2f", totalCost) + "</italic>"))
+                        NumberFormatter.format(totalCost) + "</italic>"))
                 .build());
 
         // Confirm button
@@ -259,7 +260,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         String msg = configManager.getMessage("buy-success")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + String.format("%.2f", totalCost));
+                .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
 
         // Stay open - refresh the confirmation GUI (don't close)
