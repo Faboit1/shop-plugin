@@ -1,5 +1,6 @@
 package com.donutshop.gui;
 
+import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.util.ItemBuilder;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.List;
 import java.util.Map;
 
 public class ShopGUI implements InventoryHolder, Listener {
@@ -61,6 +63,29 @@ public class ShopGUI implements InventoryHolder, Listener {
             }
         }
 
+        // Place the hourly shop button (placed after categories so it is never overwritten)
+        if (configManager.isHourlyShopEnabled()) {
+            int featuredSlot = configManager.getHourlyShopFeaturedSlot();
+            if (featuredSlot >= 0 && featuredSlot < size) {
+                Material buttonMat;
+                try {
+                    buttonMat = Material.valueOf(configManager.getHourlyShopButtonMaterial());
+                } catch (IllegalArgumentException ignored) {
+                    buttonMat = Material.CLOCK;
+                }
+                ItemBuilder buttonBuilder = new ItemBuilder(buttonMat)
+                        .rawName(configManager.getHourlyShopButtonName());
+                List<String> buttonLore = configManager.getHourlyShopButtonLore();
+                if (buttonLore != null && !buttonLore.isEmpty()) {
+                    buttonBuilder.rawLore(buttonLore);
+                }
+                if (configManager.isHourlyShopButtonGlow()) {
+                    buttonBuilder.glow();
+                }
+                inv.setItem(featuredSlot, buttonBuilder.build());
+            }
+        }
+
         player.openInventory(inv);
     }
 
@@ -74,6 +99,12 @@ public class ShopGUI implements InventoryHolder, Listener {
 
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= event.getInventory().getSize()) return;
+
+        // Route clicks on the hourly shop button
+        if (configManager.isHourlyShopEnabled() && slot == configManager.getHourlyShopFeaturedSlot()) {
+            ((DonutShop) plugin).getHourlyShopGUI().open(player);
+            return;
+        }
 
         // Check if clicked slot matches a category
         Map<String, ConfigManager.CategoryConfig> categories = configManager.getCategories();

@@ -4,6 +4,7 @@ import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
 import com.donutshop.util.ItemBuilder;
+import com.donutshop.util.NumberFormatter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -184,10 +185,10 @@ public class CategoryGUI implements InventoryHolder, Listener {
         List<String> lore = new ArrayList<>();
         for (String line : loreFormat) {
             String costStr = shopItem.getBuyPrice() >= 0
-                    ? currencySymbol + String.format("%.2f", shopItem.getBuyPrice())
+                    ? currencySymbol + NumberFormatter.format(shopItem.getBuyPrice())
                     : "<red>Not for sale";
             String sellStr = shopItem.getSellPrice() >= 0
-                    ? currencySymbol + String.format("%.2f", shopItem.getSellPrice())
+                    ? currencySymbol + NumberFormatter.format(shopItem.getSellPrice())
                     : "<red>Cannot sell";
             lore.add(line
                     .replace("{cost}", costStr)
@@ -349,7 +350,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         String msg = configManager.getMessage("buy-success")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + String.format("%.2f", totalCost));
+                .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 
@@ -384,7 +385,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(toSell))
                 .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + String.format("%.2f", totalEarnings));
+                .replace("{price}", currencySymbol + NumberFormatter.format(totalEarnings));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 
@@ -418,7 +419,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(playerHas))
                 .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + String.format("%.2f", totalEarnings));
+                .replace("{price}", currencySymbol + NumberFormatter.format(totalEarnings));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 

@@ -5,7 +5,9 @@ import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
 import com.donutshop.gui.CategoryGUI;
 import com.donutshop.gui.ConfirmationGUI;
+import com.donutshop.gui.HourlyShopGUI;
 import com.donutshop.gui.ShopGUI;
+import com.donutshop.hourly.HourlyItemManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -16,6 +18,8 @@ public class DonutShop extends JavaPlugin {
     private ConfigManager configManager;
     private EconomyManager economyManager;
     private ShopGUI shopGUI;
+    private HourlyItemManager hourlyItemManager;
+    private HourlyShopGUI hourlyShopGUI;
 
     @Override
     public void onEnable() {
@@ -53,10 +57,16 @@ public class DonutShop extends JavaPlugin {
         // Initialize GUI
         shopGUI = new ShopGUI(this, configManager);
         
+        // Initialize hourly shop
+        hourlyItemManager = new HourlyItemManager(this);
+        hourlyShopGUI = new HourlyShopGUI(this, configManager);
+        hourlyItemManager.start();
+        
         // Register events
         getServer().getPluginManager().registerEvents(shopGUI, this);
         getServer().getPluginManager().registerEvents(new CategoryGUI(this, configManager), this);
         getServer().getPluginManager().registerEvents(new ConfirmationGUI(this, configManager), this);
+        getServer().getPluginManager().registerEvents(hourlyShopGUI, this);
         
         // Register commands
         ShopCommand shopCommand = new ShopCommand(this);
@@ -69,6 +79,9 @@ public class DonutShop extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (hourlyItemManager != null) {
+            hourlyItemManager.shutdown();
+        }
         getLogger().info("DonutShop has been disabled!");
     }
 
@@ -87,6 +100,14 @@ public class DonutShop extends JavaPlugin {
     public ShopGUI getShopGUI() {
         return shopGUI;
     }
+
+    public HourlyItemManager getHourlyItemManager() {
+        return hourlyItemManager;
+    }
+
+    public HourlyShopGUI getHourlyShopGUI() {
+        return hourlyShopGUI;
+    }
     
     public void reload() {
         configManager.reload();
@@ -96,7 +117,11 @@ public class DonutShop extends JavaPlugin {
             configManager.getEconomyProvider(),
             configManager.getCoinsEngineCurrency()
         );
-        // ShopGUI and CategoryGUI hold a reference to configManager and read it dynamically,
-        // so they do not need to be recreated or re-registered on reload.
+        // Reload hourly shop (re-reads hourly-items.yml and reschedules)
+        if (hourlyItemManager != null) {
+            hourlyItemManager.reload();
+        }
+        // ShopGUI, CategoryGUI, ConfirmationGUI, and HourlyShopGUI hold references to
+        // configManager and read it dynamically, so they do not need recreation on reload.
     }
 }

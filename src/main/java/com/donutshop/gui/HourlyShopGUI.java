@@ -6,6 +6,7 @@ import com.donutshop.economy.EconomyManager;
 import com.donutshop.hourly.HourlyItem;
 import com.donutshop.hourly.HourlyItemManager;
 import com.donutshop.util.ItemBuilder;
+import com.donutshop.util.NumberFormatter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -101,7 +102,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             List<String> loreLines = new ArrayList<>(hourlyItem.getLore());
             loreLines.add("");
             if (hourlyItem.getCost() > 0) {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + currencySymbol + formatCost(hourlyItem.getCost()));
+                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
             } else {
                 loreLines.add("<gray>ᴄᴏsᴛ: <green>FREE");
             }
@@ -189,7 +190,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             String msg = configManager.getMessage("buy-success")
                     .replace("{amount}", "1")
                     .replace("{item}", itemName)
-                    .replace("{price}", currencySymbol + formatCost(hourlyItem.getCost()));
+                    .replace("{price}", currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
 
         } else {
@@ -218,7 +219,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             String msg = configManager.getMessage("buy-success")
                     .replace("{amount}", "1")
                     .replace("{item}", itemName)
-                    .replace("{price}", currencySymbol + formatCost(hourlyItem.getCost()));
+                    .replace("{price}", currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
         }
     }
@@ -276,14 +277,6 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         if (text == null) return "";
         return text.replaceAll("&[0-9a-fk-orA-FK-OR]", "")
                    .replaceAll("<[^>]+>", "");
-    }
-
-    private String formatCost(double cost) {
-        if (cost <= 0) return "FREE";
-        if (cost >= 1_000_000_000) return String.format("%.1fb", cost / 1_000_000_000);
-        if (cost >= 1_000_000) return String.format("%.1fm", cost / 1_000_000);
-        if (cost >= 1_000) return String.format("%.1fk", cost / 1_000);
-        return String.format("%.2f", cost);
     }
 
     @Override
