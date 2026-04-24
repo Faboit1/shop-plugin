@@ -1,0 +1,135 @@
+# ============================================================
+#  ᴅᴏɴᴜᴛsʜᴏᴘ - ʜᴏᴜʀʟʏ ɪᴛᴇᴍs
+#  Items that can appear in the hourly rotating shop.
+#  Every hour (on the clock), a new random set is picked.
+# ============================================================
+#
+# Each entry supports:
+#   type:     "material" (gives a Bukkit item) or "command" (runs console commands)
+#   material: Bukkit Material name — used for the GUI icon and, for type=material, what is given
+#   name:     Display name — supports legacy &color codes (&b, &l, etc.) AND MiniMessage (<aqua>)
+#   lore:     (optional) List of lore lines in MiniMessage format
+#   weight:   Integer ≥ 1. Higher = more common. Used for weighted-random selection.
+#   cost:     Price in your economy currency. Supports plain numbers (5000000) or
+#             shorthand: 5k (5 000), 5m (5 000 000), 5b (5 000 000 000). Use -1 for free.
+#
+# For type: command
+#   command:  Single console command — {player} and %player% are replaced with the buyer's name
+#   commands: (alternative) List of console commands executed in order
+#
+# Items whose weight% of the total pool weight is ≤ rare.threshold-percent (config.yml)
+# are considered RARE and trigger a server-wide chat announcement + sound.
+#
+# You can add as many entries as you like. Duplicate weights are fine.
+# ============================================================
+
+items:
+
+  # ── Common items (high weight) ─────────────────────────────
+
+  common_stone:
+    type: material
+    material: STONE
+    name: "<gray>Stone Bundle"
+    lore:
+      - "<gray>A bundle of smooth stone."
+    weight: 100
+    cost: 500
+
+  common_iron:
+    type: material
+    material: IRON_INGOT
+    name: "<white>Iron Ingot"
+    lore:
+      - "<gray>Reliable crafting material."
+    weight: 80
+    cost: 1000
+
+  common_gold:
+    type: material
+    material: GOLD_INGOT
+    name: "<gold>Gold Ingot"
+    lore:
+      - "<gray>Worth its weight in gold."
+    weight: 60
+    cost: 2500
+
+  common_bread:
+    type: material
+    material: BREAD
+    name: "<yellow>Bread Stack"
+    lore:
+      - "<gray>Stay fed, stay alive."
+    weight: 90
+    cost: 200
+
+  # ── Uncommon items (medium weight) ─────────────────────────
+
+  uncommon_diamond:
+    type: material
+    material: DIAMOND
+    name: "<aqua>Diamond"
+    lore:
+      - "<gray>Rare and valuable."
+    weight: 25
+    cost: 10000
+
+  uncommon_ender_pearl:
+    type: material
+    material: ENDER_PEARL
+    name: "<dark_green>Ender Pearl"
+    lore:
+      - "<gray>Teleport in style."
+    weight: 30
+    cost: 5000
+
+  uncommon_golden_apple:
+    type: material
+    material: GOLDEN_APPLE
+    name: "<gold>Golden Apple"
+    lore:
+      - "<gray>A healthy snack."
+    weight: 20
+    cost: 8000
+
+  # ── Rare items (low weight ≤ 5% of total) ──────────────────
+  # Default total weight ≈ 100+80+60+90+25+30+20+8+5+3 = 421
+  # 5% of 421 ≈ 21, so anything ≤ 8 weight triggers the rare announcement
+
+  rare_totem:
+    type: material
+    material: TOTEM_OF_UNDYING
+    name: "<light_purple><bold>Totem of Undying"
+    lore:
+      - "<gray>Cheat death once."
+      - "<light_purple>✦ Hourly Exclusive ✦"
+    weight: 8
+    cost: 150000
+
+  rare_elytra:
+    type: material
+    material: ELYTRA
+    name: "<gold><bold>Elytra"
+    lore:
+      - "<gray>Soar through the skies."
+      - "<gold>✦ Hourly Exclusive ✦"
+    weight: 5
+    cost: 500000
+
+  # ── Example command item ────────────────────────────────────
+  # Uncomment and customise to enable a custom command-driven item.
+  #
+  # rare_drill:
+  #   type: command
+  #   material: IRON_PICKAXE          # Icon shown in the GUI
+  #   name: "&b&lDRILL"               # Legacy color codes are supported
+  #   lore:
+  #     - "<gray>A powerful drill!"
+  #     - "<aqua>Exclusive hourly item!"
+  #   weight: 3                       # Rare — ~0.7% of the default pool
+  #   cost: 5m                        # 5 000 000
+  #   command: "givedrill {player}"   # Executed from console; {player} = buyer's name
+  #   # Or use multiple commands:
+  #   # commands:
+  #   #   - "givedrill {player}"
+  #   #   - "tell {player} You bought a Drill!"
