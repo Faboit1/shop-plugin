@@ -27,7 +27,7 @@ public class HourlyItemManager {
     private List<HourlyItem> currentItems = new ArrayList<>();
     private BukkitTask scheduledTask;
 
-    public HourlyItemManager(DonutShop plugin) {
+    private static final long MILLIS_PER_HOUR = 3_600_000L;
         this.plugin = plugin;
     }
 
@@ -169,7 +169,7 @@ public class HourlyItemManager {
     private void scheduleHourlyRefresh() {
         long now = System.currentTimeMillis();
         // Calculate milliseconds until the start of the next full hour
-        long nextHourMs = (now / 3_600_000L + 1) * 3_600_000L;
+        long nextHourMs = (now / MILLIS_PER_HOUR + 1) * MILLIS_PER_HOUR;
         long delayMs = nextHourMs - now;
         long delayTicks = Math.max(1L, delayMs / 50L);    // 1 tick = 50 ms
         long periodTicks = 72_000L;                         // 1 hour = 3600 s * 20 ticks/s
@@ -211,7 +211,7 @@ public class HourlyItemManager {
     /** Strip legacy &-codes and MiniMessage tags from a string for plain-text display. */
     private String stripColors(String text) {
         if (text == null) return "";
-        return text.replaceAll("&[0-9a-fk-orA-FK-OR]", "")
+        return text.replaceAll("&[0-9a-fk-orA-FK-Or]", "")
                    .replaceAll("<[^>]+>", "");
     }
 

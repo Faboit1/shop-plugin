@@ -275,7 +275,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
 
     private String stripColors(String text) {
         if (text == null) return "";
-        return text.replaceAll("&[0-9a-fk-orA-FK-OR]", "")
+        return text.replaceAll("&[0-9a-fk-orA-FK-Or]", "")
                    .replaceAll("<[^>]+>", "");
     }
 
