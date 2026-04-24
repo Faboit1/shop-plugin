@@ -13,6 +13,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.Sound;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,7 @@ public class ShopGUI implements InventoryHolder, Listener {
         }
 
         player.openInventory(inv);
+        playSound(player, configManager.getSoundOpenMenu());
     }
 
     @EventHandler
@@ -111,6 +113,7 @@ public class ShopGUI implements InventoryHolder, Listener {
         for (Map.Entry<String, ConfigManager.CategoryConfig> entry : categories.entrySet()) {
             ConfigManager.CategoryConfig cat = entry.getValue();
             if (cat.getSlot() == slot) {
+                playSound(player, configManager.getSoundNavigate());
                 // Open category GUI
                 CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
                 categoryGUI.open(player, 0, cat);
@@ -122,5 +125,13 @@ public class ShopGUI implements InventoryHolder, Listener {
     @Override
     public Inventory getInventory() {
         return null; // Not used directly
+    }
+
+    private void playSound(Player player, String soundName) {
+        if (soundName == null || soundName.isEmpty() || soundName.equalsIgnoreCase("NONE")) return;
+        try {
+            Sound sound = Sound.valueOf(soundName);
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        } catch (IllegalArgumentException ignored) {}
     }
 }

@@ -28,6 +28,8 @@ public class HourlyItemManager {
     private BukkitTask scheduledTask;
 
     private static final long MILLIS_PER_HOUR = 3_600_000L;
+
+    public HourlyItemManager(DonutShop plugin) {
         this.plugin = plugin;
     }
 

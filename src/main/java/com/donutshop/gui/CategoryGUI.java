@@ -170,6 +170,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         }
 
         player.openInventory(inv);
+        playSound(player, configManager.getSoundNavigate());
     }
 
     private ItemStack buildShopItemStack(ConfigManager.ShopItem shopItem, String currencySymbol) {
@@ -284,6 +285,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
                 return;
             }
             ConfirmationGUI confirmGUI = new ConfirmationGUI(plugin, configManager);
+            playSound(player, configManager.getSoundNavigate());
             confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {
             handleSell(player, shopItem, 1, economy, currencySymbol);
