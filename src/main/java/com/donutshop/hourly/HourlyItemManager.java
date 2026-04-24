@@ -218,14 +218,15 @@ public class HourlyItemManager {
     }
 
     /**
-     * Parse a cost string such as "5000000", "5m", "50k", or "2b".
+     * Parse a cost string such as "5000000", "5m", "50k", "2b", or "1t".
      * Returns -1 for free / unparseable values.
      */
-    public static double parseCost(String cost) {
+    private static double parseCost(String cost) {
         if (cost == null || cost.isEmpty()) return -1;
         cost = cost.trim().toLowerCase();
         if (cost.equals("-1") || cost.equals("free")) return -1;
         try {
+            if (cost.endsWith("t")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000_000L;
             if (cost.endsWith("b")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000;
             if (cost.endsWith("m")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000;
             if (cost.endsWith("k")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000;
