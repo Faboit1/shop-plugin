@@ -109,11 +109,12 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
 
             if (limitReached) {
                 // Show a barrier to indicate the purchase limit has been reached
+                int bought = manager.getPurchaseCount(player.getUniqueId(), hourlyItem.getId());
                 List<String> barrierLore = new ArrayList<>();
                 barrierLore.add("");
                 barrierLore.add("<red>ᴘᴜʀᴄʜᴀsᴇ ʟɪᴍɪᴛ ʀᴇᴀᴄʜᴇᴅ");
-                barrierLore.add("<gray>ʏᴏᴜ ʜᴀᴠᴇ ʙᴏᴜɢʜᴛ " + hourlyItem.getPurchaseLimit()
-                        + "/" + hourlyItem.getPurchaseLimit() + " ᴏꜰ ᴛʜɪs ɪᴛᴇᴍ.");
+                barrierLore.add("<gray>ʙᴏᴜɢʜᴛ: <red>" + bought
+                        + "<gray>/" + hourlyItem.getPurchaseLimit());
                 inv.setItem(slot, buildItemStack(Material.BARRIER, hourlyItem.getName(), barrierLore));
                 slotMapping.put(slot, hourlyItem);
                 continue;
@@ -132,8 +133,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             // Purchase limit badge
             if (hourlyItem.getPurchaseLimit() > 0) {
                 int bought = manager.getPurchaseCount(player.getUniqueId(), hourlyItem.getId());
-                int remaining = hourlyItem.getPurchaseLimit() - bought;
-                loreLines.add("<gray>ʀᴇᴍᴀɪɴɪɴɢ: <yellow>" + remaining + "<gray>/" + hourlyItem.getPurchaseLimit());
+                loreLines.add("<gray>ʙᴏᴜɢʜᴛ: <yellow>" + bought + "<gray>/" + hourlyItem.getPurchaseLimit());
             }
             // Rare badge
             if (totalWeight > 0 && 100.0 * hourlyItem.getWeight() / totalWeight <= rareThreshold) {
