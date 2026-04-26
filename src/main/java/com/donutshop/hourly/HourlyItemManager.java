@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages the hourly rotating shop: loads the item pool from hourly-items.yml,
@@ -26,6 +27,9 @@ public class HourlyItemManager {
     private List<HourlyItem> itemPool = new ArrayList<>();
     private List<HourlyItem> currentItems = new ArrayList<>();
     private BukkitTask scheduledTask;
+
+    /** Tracks how many times each player has purchased each item in the current hour. */
+    private final Map<UUID, Map<String, Integer>> playerPurchaseCounts = new ConcurrentHashMap<>();
 
     private static final long MILLIS_PER_HOUR = 3_600_000L;
 
@@ -98,7 +102,8 @@ public class HourlyItemManager {
                 commands = Collections.emptyList();
             }
 
-            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, cost, commands));
+            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, cost, commands,
+                    sec.getInt("purchaselimit", -1)));
         }
 
         plugin.getLogger().info("[HourlyShop] Loaded " + itemPool.size() + " items into the hourly pool.");
@@ -108,6 +113,7 @@ public class HourlyItemManager {
 
     /**
      * Pick a new set of items from the pool and, if any are rare, broadcast the announcement.
+     * Also resets per-player purchase counts for the new hour.
      */
     public void refresh() {
         if (itemPool.isEmpty()) {
@@ -117,6 +123,9 @@ public class HourlyItemManager {
 
         int count = Math.min(plugin.getConfigManager().getHourlyShopItemCount(), itemPool.size());
         currentItems = selectWeightedRandom(itemPool, count);
+
+        // Reset purchase counts for the new rotation
+        playerPurchaseCounts.clear();
 
         plugin.getLogger().info("[HourlyShop] Items refreshed: " +
                 currentItems.stream().map(HourlyItem::getId).reduce((a, b) -> a + ", " + b).orElse("(none)"));
@@ -246,5 +255,27 @@ public class HourlyItemManager {
     /** The full weighted pool loaded from hourly-items.yml. */
     public List<HourlyItem> getItemPool() {
         return Collections.unmodifiableList(itemPool);
+    }
+
+    // ── Purchase-limit tracking ───────────────────────────────
+
+    /** Returns how many times the given player has bought this item in the current hour. */
+    public int getPurchaseCount(UUID playerUuid, String itemId) {
+        Map<String, Integer> counts = playerPurchaseCounts.get(playerUuid);
+        return counts != null ? counts.getOrDefault(itemId, 0) : 0;
+    }
+
+    /** Records one purchase of the given item for the player. */
+    public void incrementPurchaseCount(UUID playerUuid, String itemId) {
+        playerPurchaseCounts
+                .computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
+                .merge(itemId, 1, Integer::sum);
+    }
+
+    /** Returns true if the player has reached (or exceeded) this item's purchase limit. */
+    public boolean isAtPurchaseLimit(UUID playerUuid, HourlyItem item) {
+        int limit = item.getPurchaseLimit();
+        if (limit < 0) return false;
+        return getPurchaseCount(playerUuid, item.getId()) >= limit;
     }
 }

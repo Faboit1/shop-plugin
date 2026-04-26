@@ -210,8 +210,10 @@ public class ConfigManager {
                 if (o instanceof Number) hourlyShopItemSlots.add(((Number) o).intValue());
             }
         }
-        if (hourlyShopItemSlots.isEmpty()) {
-            hourlyShopItemSlots = Arrays.asList(11, 13, 15);
+
+        // Auto-compute slots from item-count when item-slots is not configured or count doesn't match
+        if (hourlyShopItemSlots.size() != hourlyShopItemCount) {
+            hourlyShopItemSlots = computeDefaultItemSlots(hourlyShopItemCount);
         }
 
         hourlyShopButtonMaterial = config.getString("hourly-shop.button.material", "CLOCK");
@@ -225,6 +227,37 @@ public class ConfigManager {
         hourlyRareSound = config.getString("hourly-shop.rare.sound", "ENTITY_ENDER_DRAGON_GROWL");
         hourlyRareSoundVolume = config.getDouble("hourly-shop.rare.sound-volume", 1.0);
         hourlyRareSoundPitch = config.getDouble("hourly-shop.rare.sound-pitch", 1.0);
+    }
+
+    /**
+     * Computes the default item slots for the hourly shop GUI based on the item count.
+     * Slots are placed symmetrically in the centre row of a 27-slot inventory:
+     *   1 → [13]
+     *   2 → [11, 15]
+     *   3 → [11, 13, 15]
+     *   4 → [11, 12, 14, 15]
+     *   5 → [11, 12, 13, 14, 15]
+     * For counts > 5, items are spread across the full middle row (slots 9–17).
+     */
+    private List<Integer> computeDefaultItemSlots(int count) {
+        switch (count) {
+            case 1: return Arrays.asList(13);
+            case 2: return Arrays.asList(11, 15);
+            case 3: return Arrays.asList(11, 13, 15);
+            case 4: return Arrays.asList(11, 12, 14, 15);
+            case 5: return Arrays.asList(11, 12, 13, 14, 15);
+            default: {
+                // Spread across the middle row (slots 9–17 inclusive = 9 slots total)
+                int available = 9;
+                int clamped = Math.min(count, available);
+                int startOffset = (available - clamped) / 2;
+                List<Integer> slots = new ArrayList<>();
+                for (int i = 0; i < clamped; i++) {
+                    slots.add(9 + startOffset + i);
+                }
+                return slots;
+            }
+        }
     }
 
     // ── Categories ────────────────────────────────────────────
