@@ -219,21 +219,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
                 return;
             }
 
-            // Charge cost if applicable
-            if (hourlyItem.getCost() > 0) {
-                if (!economy.has(player, hourlyItem.getCost())) {
-                    playSound(player, configManager.getSoundError());
-                    String msg = configManager.getMessage("not-enough-money");
-                    if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-                    return;
-                }
-                if (!economy.withdraw(player, hourlyItem.getCost())) {
-                    playSound(player, configManager.getSoundError());
-                    player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
-                    return;
-                }
-            }
+            if (!chargePlayer(player, economy, hourlyItem)) return;
 
             player.getInventory().addItem(itemStack);
             manager.incrementPurchaseCount(player.getUniqueId(), hourlyItem.getId());
@@ -247,21 +233,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
 
         } else {
-            // Charge cost if applicable
-            if (hourlyItem.getCost() > 0) {
-                if (!economy.has(player, hourlyItem.getCost())) {
-                    playSound(player, configManager.getSoundError());
-                    String msg = configManager.getMessage("not-enough-money");
-                    if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-                    return;
-                }
-                if (!economy.withdraw(player, hourlyItem.getCost())) {
-                    playSound(player, configManager.getSoundError());
-                    player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
-                    return;
-                }
-            }
+            if (!chargePlayer(player, economy, hourlyItem)) return;
 
             // Dispatch each command from console with player placeholder
             for (String cmd : hourlyItem.getCommands()) {
@@ -282,6 +254,28 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
 
         // Refresh the GUI to reflect updated purchase counts / limit state
         refreshForPlayer(player);
+    }
+
+    /**
+     * Validates that the player has enough funds and withdraws the cost.
+     * Returns true if the charge succeeded (or item is free); false if it failed
+     * (in which case an error message and sound are already sent to the player).
+     */
+    private boolean chargePlayer(Player player, EconomyManager economy, HourlyItem hourlyItem) {
+        if (hourlyItem.getCost() <= 0) return true;
+        if (!economy.has(player, hourlyItem.getCost())) {
+            playSound(player, configManager.getSoundError());
+            String msg = configManager.getMessage("not-enough-money");
+            if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
+            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+            return false;
+        }
+        if (!economy.withdraw(player, hourlyItem.getCost())) {
+            playSound(player, configManager.getSoundError());
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
+            return false;
+        }
+        return true;
     }
 
     /**

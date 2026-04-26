@@ -247,7 +247,7 @@ public class ConfigManager {
             case 4: return Arrays.asList(11, 12, 14, 15);
             case 5: return Arrays.asList(11, 12, 13, 14, 15);
             default: {
-                // Spread across the middle row (slots 9–17, 9 available slots)
+                // Spread across the middle row (slots 9–17 inclusive = 9 slots total)
                 int available = 9;
                 int clamped = Math.min(count, available);
                 int startOffset = (available - clamped) / 2;
