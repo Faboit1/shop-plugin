@@ -5,6 +5,7 @@ import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
 import com.donutshop.gui.CategoryGUI;
 import com.donutshop.gui.ConfirmationGUI;
+import com.donutshop.gui.HourlyConfirmationGUI;
 import com.donutshop.gui.HourlyShopGUI;
 import com.donutshop.gui.ShopGUI;
 import com.donutshop.hourly.HourlyItemManager;
@@ -20,6 +21,7 @@ public class DonutShop extends JavaPlugin {
     private ShopGUI shopGUI;
     private HourlyItemManager hourlyItemManager;
     private HourlyShopGUI hourlyShopGUI;
+    private HourlyConfirmationGUI hourlyConfirmationGUI;
 
     @Override
     public void onEnable() {
@@ -60,6 +62,7 @@ public class DonutShop extends JavaPlugin {
         // Initialize hourly shop
         hourlyItemManager = new HourlyItemManager(this);
         hourlyShopGUI = new HourlyShopGUI(this, configManager);
+        hourlyConfirmationGUI = new HourlyConfirmationGUI(this, configManager);
         hourlyItemManager.start();
         
         // Register events
@@ -67,6 +70,7 @@ public class DonutShop extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CategoryGUI(this, configManager), this);
         getServer().getPluginManager().registerEvents(new ConfirmationGUI(this, configManager), this);
         getServer().getPluginManager().registerEvents(hourlyShopGUI, this);
+        getServer().getPluginManager().registerEvents(hourlyConfirmationGUI, this);
         
         // Register commands
         ShopCommand shopCommand = new ShopCommand(this);
@@ -107,6 +111,10 @@ public class DonutShop extends JavaPlugin {
 
     public HourlyShopGUI getHourlyShopGUI() {
         return hourlyShopGUI;
+    }
+
+    public HourlyConfirmationGUI getHourlyConfirmationGUI() {
+        return hourlyConfirmationGUI;
     }
     
     public void reload() {

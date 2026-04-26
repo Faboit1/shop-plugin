@@ -272,6 +272,14 @@ public class HourlyItemManager {
                 .merge(itemId, 1, Integer::sum);
     }
 
+    /** Records {@code amount} purchases of the given item for the player in a single operation. */
+    public void addPurchaseCount(UUID playerUuid, String itemId, int amount) {
+        if (amount <= 0) return;
+        playerPurchaseCounts
+                .computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
+                .merge(itemId, amount, Integer::sum);
+    }
+
     /** Returns true if the player has reached (or exceeded) this item's purchase limit. */
     public boolean isAtPurchaseLimit(UUID playerUuid, HourlyItem item) {
         int limit = item.getPurchaseLimit();
