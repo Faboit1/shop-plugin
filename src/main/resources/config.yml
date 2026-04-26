@@ -72,11 +72,15 @@ hourly-shop:
   # Title of the hourly shop sub-GUI
   gui-title: "<gradient:#ff6b6b:#ffa07a>ʜᴏᴜʀʟʏ sʜᴏᴘ</gradient>"
 
-  # How many items are picked from the pool each hour
+  # How many items are picked from the pool each hour.
+  # Changing this value automatically adjusts the slot layout:
+  #   1 → centre only  |  2 → flanking  |  3 → classic (11,13,15)
+  #   4 → two pairs    |  5 → full row  |  6–9 → full middle row
   item-count: 3
 
-  # Slots inside the hourly shop GUI where the picked items appear.
-  # Number of entries should match item-count.
+  # (Optional) Manual override for which GUI slots the items appear in.
+  # Must have the same number of entries as item-count to take effect;
+  # otherwise the layout is auto-computed from item-count (see above).
   item-slots:
     - 11
     - 13

@@ -17,9 +17,11 @@ public class HourlyItem {
     private final int weight;        // Higher = more common
     private final double cost;       // -1 = free
     private final List<String> commands; // Executed as console when type=command
+    private final int purchaseLimit; // Max purchases per player per hour; -1 = unlimited
 
     public HourlyItem(String id, String type, String material, String name,
-                      List<String> lore, int weight, double cost, List<String> commands) {
+                      List<String> lore, int weight, double cost, List<String> commands,
+                      int purchaseLimit) {
         this.id = id;
         this.type = (type != null) ? type : "material";
         this.material = (material != null) ? material : "STONE";
@@ -28,6 +30,7 @@ public class HourlyItem {
         this.weight = Math.max(1, weight);
         this.cost = cost;
         this.commands = (commands != null) ? Collections.unmodifiableList(commands) : Collections.emptyList();
+        this.purchaseLimit = purchaseLimit;
     }
 
     public String getId() { return id; }
@@ -38,6 +41,7 @@ public class HourlyItem {
     public int getWeight() { return weight; }
     public double getCost() { return cost; }
     public List<String> getCommands() { return commands; }
+    public int getPurchaseLimit() { return purchaseLimit; }
 
     public boolean isCommandItem() {
         return "command".equalsIgnoreCase(type);

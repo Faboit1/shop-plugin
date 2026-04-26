@@ -50,6 +50,15 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
     // ── Open ──────────────────────────────────────────────────
 
     public void open(Player player) {
+        openInternal(player, true);
+    }
+
+    /** Rebuilds the GUI inventory without playing the open-menu sound (used after purchases). */
+    private void refreshForPlayer(Player player) {
+        openInternal(player, false);
+    }
+
+    private void openInternal(Player player, boolean playOpenSound) {
         HourlyItemManager manager = plugin.getHourlyItemManager();
         List<HourlyItem> currentItems = manager.getCurrentItems();
 
@@ -96,6 +105,20 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             int slot = itemSlots.get(i);
             if (slot < 0 || slot >= GUI_SIZE) continue;
 
+            boolean limitReached = manager.isAtPurchaseLimit(player.getUniqueId(), hourlyItem);
+
+            if (limitReached) {
+                // Show a barrier to indicate the purchase limit has been reached
+                List<String> barrierLore = new ArrayList<>();
+                barrierLore.add("");
+                barrierLore.add("<red>ᴘᴜʀᴄʜᴀsᴇ ʟɪᴍɪᴛ ʀᴇᴀᴄʜᴇᴅ");
+                barrierLore.add("<gray>ʏᴏᴜ ʜᴀᴠᴇ ʙᴏᴜɢʜᴛ " + hourlyItem.getPurchaseLimit()
+                        + "/" + hourlyItem.getPurchaseLimit() + " ᴏꜰ ᴛʜɪs ɪᴛᴇᴍ.");
+                inv.setItem(slot, buildItemStack(Material.BARRIER, hourlyItem.getName(), barrierLore));
+                slotMapping.put(slot, hourlyItem);
+                continue;
+            }
+
             Material mat = parseMaterial(hourlyItem.getMaterial(), Material.STONE);
 
             // Build lore
@@ -105,6 +128,12 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
                 loreLines.add("<gray>ᴄᴏsᴛ: <green>" + currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
             } else {
                 loreLines.add("<gray>ᴄᴏsᴛ: <green>FREE");
+            }
+            // Purchase limit badge
+            if (hourlyItem.getPurchaseLimit() > 0) {
+                int bought = manager.getPurchaseCount(player.getUniqueId(), hourlyItem.getId());
+                int remaining = hourlyItem.getPurchaseLimit() - bought;
+                loreLines.add("<gray>ʀᴇᴍᴀɪɴɪɴɢ: <yellow>" + remaining + "<gray>/" + hourlyItem.getPurchaseLimit());
             }
             // Rare badge
             if (totalWeight > 0 && 100.0 * hourlyItem.getWeight() / totalWeight <= rareThreshold) {
@@ -118,7 +147,9 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         }
 
         playerSlotMappings.put(player.getUniqueId(), slotMapping);
-        playSound(player, configManager.getSoundOpenMenu());
+        if (playOpenSound) {
+            playSound(player, configManager.getSoundOpenMenu());
+        }
         player.openInventory(inv);
     }
 
@@ -159,60 +190,53 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             return;
         }
 
-        String currencySymbol = configManager.getCurrencySymbol();
+        HourlyItemManager manager = plugin.getHourlyItemManager();
 
-        // Charge cost if applicable
-        if (hourlyItem.getCost() > 0) {
-            if (!economy.has(player, hourlyItem.getCost())) {
-                playSound(player, configManager.getSoundError());
-                String msg = configManager.getMessage("not-enough-money");
-                if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
-                player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-                return;
-            }
-            if (!economy.withdraw(player, hourlyItem.getCost())) {
-                playSound(player, configManager.getSoundError());
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
-                return;
-            }
+        // Check purchase limit
+        if (manager.isAtPurchaseLimit(player.getUniqueId(), hourlyItem)) {
+            playSound(player, configManager.getSoundError());
+            player.sendMessage(MiniMessage.miniMessage().deserialize(
+                    "<red>ʏᴏᴜ ʜᴀᴠᴇ ʀᴇᴀᴄʜᴇᴅ ᴛʜᴇ ᴘᴜʀᴄʜᴀsᴇ ʟɪᴍɪᴛ ꜰᴏʀ ᴛʜɪs ɪᴛᴇᴍ!"));
+            return;
         }
 
-        if (hourlyItem.isCommandItem()) {
-            // Dispatch each command from console with player placeholder
-            for (String cmd : hourlyItem.getCommands()) {
-                String processed = cmd
-                        .replace("{player}", player.getName())
-                        .replace("%player%", player.getName());
-                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed);
-            }
-            playSound(player, configManager.getSoundBuy());
-            String itemName = stripColors(hourlyItem.getName());
-            String msg = configManager.getMessage("buy-success")
-                    .replace("{amount}", "1")
-                    .replace("{item}", itemName)
-                    .replace("{price}", currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
-            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+        String currencySymbol = configManager.getCurrencySymbol();
 
-        } else {
-            // Give material item
+        if (!hourlyItem.isCommandItem()) {
+            // Check inventory space BEFORE charging, to avoid refund flow
             Material mat = parseMaterial(hourlyItem.getMaterial(), null);
             if (mat == null) {
-                if (hourlyItem.getCost() > 0) economy.deposit(player, hourlyItem.getCost());
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Invalid item configuration!"));
                 return;
             }
 
             ItemStack itemStack = new ItemStack(mat, 1);
-            Map<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-            if (!leftover.isEmpty()) {
-                if (hourlyItem.getCost() > 0) economy.deposit(player, hourlyItem.getCost());
+            if (!hasInventorySpace(player, itemStack)) {
                 playSound(player, configManager.getSoundError());
                 String msg = configManager.getMessage("inventory-full");
                 if (msg.isEmpty()) msg = "<red>ʏᴏᴜʀ ɪɴᴠᴇɴᴛᴏʀʏ ɪs ғᴜʟʟ!";
                 player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
                 return;
             }
+
+            // Charge cost if applicable
+            if (hourlyItem.getCost() > 0) {
+                if (!economy.has(player, hourlyItem.getCost())) {
+                    playSound(player, configManager.getSoundError());
+                    String msg = configManager.getMessage("not-enough-money");
+                    if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                    return;
+                }
+                if (!economy.withdraw(player, hourlyItem.getCost())) {
+                    playSound(player, configManager.getSoundError());
+                    player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
+                    return;
+                }
+            }
+
+            player.getInventory().addItem(itemStack);
+            manager.incrementPurchaseCount(player.getUniqueId(), hourlyItem.getId());
 
             playSound(player, configManager.getSoundBuy());
             String itemName = mat.name().replace('_', ' ').toLowerCase();
@@ -221,7 +245,60 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
                     .replace("{item}", itemName)
                     .replace("{price}", currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+
+        } else {
+            // Charge cost if applicable
+            if (hourlyItem.getCost() > 0) {
+                if (!economy.has(player, hourlyItem.getCost())) {
+                    playSound(player, configManager.getSoundError());
+                    String msg = configManager.getMessage("not-enough-money");
+                    if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                    return;
+                }
+                if (!economy.withdraw(player, hourlyItem.getCost())) {
+                    playSound(player, configManager.getSoundError());
+                    player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
+                    return;
+                }
+            }
+
+            // Dispatch each command from console with player placeholder
+            for (String cmd : hourlyItem.getCommands()) {
+                String processed = cmd
+                        .replace("{player}", player.getName())
+                        .replace("%player%", player.getName());
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed);
+            }
+            manager.incrementPurchaseCount(player.getUniqueId(), hourlyItem.getId());
+            playSound(player, configManager.getSoundBuy());
+            String itemName = stripColors(hourlyItem.getName());
+            String msg = configManager.getMessage("buy-success")
+                    .replace("{amount}", "1")
+                    .replace("{item}", itemName)
+                    .replace("{price}", currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
         }
+
+        // Refresh the GUI to reflect updated purchase counts / limit state
+        refreshForPlayer(player);
+    }
+
+    /**
+     * Returns true if the player's inventory can accept at least one of the given item
+     * (either via an empty slot or by stacking onto a partial stack).
+     */
+    private boolean hasInventorySpace(Player player, ItemStack item) {
+        org.bukkit.inventory.PlayerInventory inv = player.getInventory();
+        for (ItemStack stack : inv.getStorageContents()) {
+            if (stack == null || stack.getType() == Material.AIR) {
+                return true;
+            }
+            if (stack.isSimilar(item) && stack.getAmount() < stack.getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ── Helpers ───────────────────────────────────────────────

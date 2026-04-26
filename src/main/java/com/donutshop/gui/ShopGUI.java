@@ -113,8 +113,7 @@ public class ShopGUI implements InventoryHolder, Listener {
         for (Map.Entry<String, ConfigManager.CategoryConfig> entry : categories.entrySet()) {
             ConfigManager.CategoryConfig cat = entry.getValue();
             if (cat.getSlot() == slot) {
-                playSound(player, configManager.getSoundNavigate());
-                // Open category GUI
+                // Do NOT play sound here — CategoryGUI.open() plays it to avoid a double sound
                 CategoryGUI categoryGUI = new CategoryGUI(plugin, configManager);
                 categoryGUI.open(player, 0, cat);
                 return;

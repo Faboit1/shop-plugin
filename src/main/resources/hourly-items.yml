@@ -5,14 +5,17 @@
 # ============================================================
 #
 # Each entry supports:
-#   type:     "material" (gives a Bukkit item) or "command" (runs console commands)
-#   material: Bukkit Material name — used for the GUI icon and, for type=material, what is given
-#   name:     Display name — supports legacy &color codes (&b, &l, etc.) AND MiniMessage (<aqua>)
-#   lore:     (optional) List of lore lines in MiniMessage format
-#   weight:   Integer ≥ 1. Higher = more common. Used for weighted-random selection.
-#   cost:     Price in your economy currency. Supports plain numbers (5000000) or
-#             shorthand: 5k (5 000), 5m (5 000 000), 5b (5 000 000 000), 5t (5 000 000 000 000).
-#             Use -1 for free.
+#   type:          "material" (gives a Bukkit item) or "command" (runs console commands)
+#   material:      Bukkit Material name — used for the GUI icon and, for type=material, what is given
+#   name:          Display name — supports legacy &color codes (&b, &l, etc.) AND MiniMessage (<aqua>)
+#   lore:          (optional) List of lore lines in MiniMessage format
+#   weight:        Integer ≥ 1. Higher = more common. Used for weighted-random selection.
+#   cost:          Price in your economy currency. Supports plain numbers (5000000) or
+#                  shorthand: 5k (5 000), 5m (5 000 000), 5b (5 000 000 000), 5t (5 000 000 000 000).
+#                  Use -1 for free.
+#   purchaselimit: (optional) Maximum number of times a single player can buy this item per hour.
+#                  The icon turns into a BARRIER when the limit is reached.
+#                  Omit or set to -1 for unlimited purchases.
 #
 # For type: command
 #   command:  Single console command — {player} and %player% are replaced with the buyer's name
@@ -54,6 +57,7 @@ items:
       - "<gray>Worth its weight in gold."
     weight: 60
     cost: 2500
+    purchaselimit: 64
 
   common_bread:
     type: material
