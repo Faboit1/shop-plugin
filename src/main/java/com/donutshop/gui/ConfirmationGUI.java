@@ -224,38 +224,49 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             return;
         }
 
-        Material mat = Material.valueOf(shopItem.getMaterial());
-
         if (!economy.withdraw(player, currency, totalCost)) {
             playSound(player, configManager.getSoundError());
             player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
             return;
         }
 
-        ItemStack itemStack = new ItemStack(mat, amount);
-        java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-        if (!leftover.isEmpty()) {
-            int notAdded = 0;
-            for (ItemStack left : leftover.values()) {
-                notAdded += left.getAmount();
+        if (shopItem.isCommand()) {
+            // Execute command for each unit purchased
+            String command = shopItem.getCommand();
+            if (command != null && !command.isBlank()) {
+                for (int i = 0; i < amount; i++) {
+                    String parsed = command.replace("{player}", player.getName());
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
+                }
             }
-            double refund = shopItem.getBuyPrice() * notAdded;
-            economy.deposit(player, currency, refund);
-            amount -= notAdded;
-            totalCost -= refund;
+        } else {
+            Material mat = Material.valueOf(shopItem.getMaterial());
+            ItemStack itemStack = new ItemStack(mat, amount);
+            java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
 
-            if (amount <= 0) {
-                playSound(player, configManager.getSoundError());
-                String msg = configManager.getMessage("inventory-full");
-                if (msg.isEmpty()) msg = "<red>Your inventory is full!";
-                player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-                return;
+            if (!leftover.isEmpty()) {
+                int notAdded = 0;
+                for (ItemStack left : leftover.values()) {
+                    notAdded += left.getAmount();
+                }
+                double refund = shopItem.getBuyPrice() * notAdded;
+                economy.deposit(player, currency, refund);
+                amount -= notAdded;
+                totalCost -= refund;
+
+                if (amount <= 0) {
+                    playSound(player, configManager.getSoundError());
+                    String msg = configManager.getMessage("inventory-full");
+                    if (msg.isEmpty()) msg = "<red>Your inventory is full!";
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                    return;
+                }
             }
         }
 
         playSound(player, configManager.getSoundBuy());
-        String materialName = formatMaterialName(mat);
+        Material mat = Material.valueOf(shopItem.getMaterial());
+        String materialName = shopItem.getName() != null ? shopItem.getName() : formatMaterialName(mat);
         String msg = configManager.getMessage("buy-success")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{item}", materialName)

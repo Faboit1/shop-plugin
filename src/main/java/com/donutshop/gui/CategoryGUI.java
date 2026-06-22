@@ -177,8 +177,8 @@ public class CategoryGUI implements InventoryHolder, Listener {
         Material mat = Material.valueOf(shopItem.getMaterial());
         ItemBuilder builder = new ItemBuilder(mat);
 
-        // Use normal formatting for item name (Title Case from material name)
-        String displayName = formatMaterialName(mat);
+        // Use custom name if set, otherwise format from material name
+        String displayName = shopItem.getName() != null ? shopItem.getName() : formatMaterialName(mat);
         builder.rawName("<white>" + displayName);
 
         // Build lore from configurable format
@@ -288,10 +288,13 @@ public class CategoryGUI implements InventoryHolder, Listener {
             playSound(player, configManager.getSoundNavigate());
             confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {
+            if (shopItem.isCommand()) return;
             handleSell(player, shopItem, 1, economy, currency);
         } else if (clickType == ClickType.SHIFT_RIGHT) {
+            if (shopItem.isCommand()) return;
             handleSell(player, shopItem, shiftAmount, economy, currency);
         } else if (clickType == ClickType.MIDDLE && configManager.isMiddleClickSellAll()) {
+            if (shopItem.isCommand()) return;
             handleSellAll(player, shopItem, economy, currency);
         }
     }
