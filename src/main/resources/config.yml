@@ -18,6 +18,7 @@
 settings:
   # Economy provider: "vault", "coinsengine", "excellenteconomy", or "auto"
   # "auto" will try Vault first, then CoinsEngine, then ExcellentEconomy
+  # Set to "excellenteconomy" if you want to use ExcellentEconomy directly
   economy-provider: "excellenteconomy"
   # CoinsEngine currency name (only used if CoinsEngine is the provider)
   coinsengine-currency: "coins"
