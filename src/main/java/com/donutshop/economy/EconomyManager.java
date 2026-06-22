@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 public class EconomyManager {
 
     private final Plugin plugin;
+    private final ConfigManager configManager;
     private final ConfigManager.CurrencyConfig defaultCurrency;
     private Economy vaultEconomy;
     private Object coinsEnginePlugin;
@@ -34,9 +35,10 @@ public class EconomyManager {
     private final Map<String, Object> excellentEconomyCurrencies = new ConcurrentHashMap<>();
     private String provider = "none";
 
-    public EconomyManager(Plugin plugin, ConfigManager.CurrencyConfig defaultCurrency) {
+    public EconomyManager(Plugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
-        this.defaultCurrency = defaultCurrency;
+        this.configManager = configManager;
+        this.defaultCurrency = configManager.getDefaultCurrencyConfig();
         setup(defaultCurrency.getProvider());
     }
 
@@ -50,19 +52,19 @@ public class EconomyManager {
                 return;
             }
             log.warning("Vault not found, trying CoinsEngine...");
-            if (setupCoinsEngine(defaultCurrency.getId())) {
+            if (setupCoinsEngine(configManager.getCoinsEngineCurrency())) {
                 provider = "coinsengine";
                 log.info("Using CoinsEngine as economy provider.");
                 return;
             }
             log.warning("CoinsEngine not found, trying ExcellentEconomy...");
-            if (setupExcellentEconomy(defaultCurrency.getId())) {
+            if (setupExcellentEconomy(configManager.getExcellentEconomyCurrency())) {
                 provider = "excellenteconomy";
                 log.info("Using ExcellentEconomy as economy provider.");
                 return;
             }
         } else if (preferred.equalsIgnoreCase("coinsengine")) {
-            if (setupCoinsEngine(defaultCurrency.getId())) {
+            if (setupCoinsEngine(configManager.getCoinsEngineCurrency())) {
                 provider = "coinsengine";
                 log.info("Using CoinsEngine as economy provider.");
                 return;
@@ -74,13 +76,13 @@ public class EconomyManager {
                 return;
             }
             log.warning("Vault not found, trying ExcellentEconomy...");
-            if (setupExcellentEconomy(defaultCurrency.getId())) {
+            if (setupExcellentEconomy(configManager.getExcellentEconomyCurrency())) {
                 provider = "excellenteconomy";
                 log.info("Using ExcellentEconomy as economy provider.");
                 return;
             }
         } else if (preferred.equalsIgnoreCase("excellenteconomy")) {
-            if (setupExcellentEconomy(defaultCurrency.getId())) {
+            if (setupExcellentEconomy(configManager.getExcellentEconomyCurrency())) {
                 provider = "excellenteconomy";
                 log.info("Using ExcellentEconomy as economy provider.");
                 return;
@@ -92,15 +94,15 @@ public class EconomyManager {
                 return;
             }
             log.warning("Vault not found, trying CoinsEngine...");
-            if (setupCoinsEngine(defaultCurrency.getId())) {
+            if (setupCoinsEngine(configManager.getCoinsEngineCurrency())) {
                 provider = "coinsengine";
                 log.info("Using CoinsEngine as economy provider.");
                 return;
             }
         } else {
             if (setupVault()) { provider = "vault"; log.info("Using Vault."); return; }
-            if (setupCoinsEngine(defaultCurrency.getId())) { provider = "coinsengine"; log.info("Using CoinsEngine."); return; }
-            if (setupExcellentEconomy(defaultCurrency.getId())) { provider = "excellenteconomy"; log.info("Using ExcellentEconomy."); return; }
+            if (setupCoinsEngine(configManager.getCoinsEngineCurrency())) { provider = "coinsengine"; log.info("Using CoinsEngine."); return; }
+            if (setupExcellentEconomy(configManager.getExcellentEconomyCurrency())) { provider = "excellenteconomy"; log.info("Using ExcellentEconomy."); return; }
         }
 
         log.severe("No economy provider found! Install Vault, CoinsEngine, or ExcellentEconomy.");
@@ -253,6 +255,13 @@ public class EconomyManager {
     private String getEffectiveCurrencyId(ConfigManager.CurrencyConfig currency) {
         if (currency.getId() != null && !currency.getId().isBlank()) {
             return currency.getId();
+        }
+        String providerName = getEffectiveProvider(currency);
+        if (providerName.equalsIgnoreCase("coinsengine")) {
+            return configManager.getCoinsEngineCurrency();
+        }
+        if (providerName.equalsIgnoreCase("excellenteconomy")) {
+            return configManager.getExcellentEconomyCurrency();
         }
         return defaultCurrency.getId();
     }
