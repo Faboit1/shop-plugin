@@ -365,15 +365,15 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
             int bought = plugin.getHourlyItemManager().getPurchaseCount(player.getUniqueId(), item.getId());
             return Math.max(0, Math.min(MAX_BULK_AMOUNT, limit - bought));
         }
-
-        private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
-            EconomyManager economy = plugin.getEconomyManager();
-            if (economy != null) {
-                return economy.formatBalance(amount, currency);
-            }
-            return currency.getSymbol() + NumberFormatter.format(amount);
-        }
         return MAX_BULK_AMOUNT;
+    }
+
+    private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
+        EconomyManager economy = plugin.getEconomyManager();
+        if (economy != null) {
+            return economy.formatBalance(amount, currency);
+        }
+        return currency.getSymbol() + NumberFormatter.format(amount);
     }
 
     private ItemStack buildItemStack(Material mat, String rawName, List<String> loreLines, int amount) {

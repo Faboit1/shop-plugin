@@ -1,24 +1,20 @@
 package com.donutshop.hourly;
 
 import com.donutshop.DonutShop;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Manages the hourly rotating shop: loads the item pool from hourly-items.yml,
  * picks a weighted-random selection each hour (exactly at the top of the hour),
- * and broadcasts rare-item announcements to all online players.
+ * resolving any configured cost ranges for the current rotation.
  */
 public class HourlyItemManager {
 
@@ -89,7 +85,7 @@ public class HourlyItemManager {
             String name = sec.getString("name", id);
             List<String> lore = sec.getStringList("lore");
             int weight = sec.getInt("weight", 100);
-            double cost = parseCost(sec.getString("cost", "-1"));
+            CostRange costRange = parseCostRange(sec.getString("cost", "-1"));
 
             // Accept either a single "command" key or a "commands" list
             List<String> commands;
@@ -102,18 +98,19 @@ public class HourlyItemManager {
                 commands = Collections.emptyList();
             }
 
-            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, cost, commands,
+            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, costRange.min(), costRange.min(),
+                    costRange.max(), commands,
                     sec.getInt("purchaselimit", -1)));
         }
 
         plugin.getLogger().info("[HourlyShop] Loaded " + itemPool.size() + " items into the hourly pool.");
     }
 
-    // ── Item selection & announcements ────────────────────────
+    // ── Item selection ────────────────────────────────────────
 
     /**
-     * Pick a new set of items from the pool and, if any are rare, broadcast the announcement.
-     * Also resets per-player purchase counts for the new hour.
+     * Pick a new set of items from the pool, resolve their hourly costs,
+     * and reset per-player purchase counts for the new hour.
      */
     public void refresh() {
         if (itemPool.isEmpty()) {
@@ -122,7 +119,9 @@ public class HourlyItemManager {
         }
 
         int count = Math.min(plugin.getConfigManager().getHourlyShopItemCount(), itemPool.size());
-        currentItems = selectWeightedRandom(itemPool, count);
+        currentItems = selectWeightedRandom(itemPool, count).stream()
+                .map(this::resolveCurrentCost)
+                .toList();
 
         // Reset purchase counts for the new rotation
         playerPurchaseCounts.clear();
@@ -130,49 +129,6 @@ public class HourlyItemManager {
         plugin.getLogger().info("[HourlyShop] Items refreshed: " +
                 currentItems.stream().map(HourlyItem::getId).reduce((a, b) -> a + ", " + b).orElse("(none)"));
 
-        announceRareItems();
-    }
-
-    private void announceRareItems() {
-        int totalWeight = itemPool.stream().mapToInt(HourlyItem::getWeight).sum();
-        if (totalWeight <= 0) return;
-
-        double rareThreshold = plugin.getConfigManager().getHourlyRareThresholdPercent();
-        List<HourlyItem> rareItems = new ArrayList<>();
-        for (HourlyItem item : currentItems) {
-            double pct = 100.0 * item.getWeight() / totalWeight;
-            if (pct <= rareThreshold) {
-                rareItems.add(item);
-            }
-        }
-
-        if (rareItems.isEmpty()) return;
-
-        // Build the comma-separated names string (strip color codes)
-        StringJoiner names = new StringJoiner(", ");
-        for (HourlyItem item : rareItems) {
-            names.add(stripColors(item.getName()));
-        }
-
-        String announcementTemplate = plugin.getConfigManager().getHourlyRareAnnouncement();
-        String announcement = announcementTemplate.replace("{names}", names.toString());
-
-        // Support legacy &-codes in the announcement
-        Component message = LegacyComponentSerializer.legacyAmpersand().deserialize(announcement);
-
-        String soundName = plugin.getConfigManager().getHourlyRareSound();
-        float volume = (float) plugin.getConfigManager().getHourlyRareSoundVolume();
-        float pitch = (float) plugin.getConfigManager().getHourlyRareSoundPitch();
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(message);
-            if (soundName != null && !soundName.isEmpty() && !soundName.equalsIgnoreCase("NONE")) {
-                try {
-                    Sound sound = Sound.valueOf(soundName);
-                    player.playSound(player.getLocation(), sound, volume, pitch);
-                } catch (IllegalArgumentException ignored) {}
-            }
-        }
     }
 
     // ── Scheduling ────────────────────────────────────────────
@@ -219,21 +175,47 @@ public class HourlyItemManager {
 
     // ── Utilities ─────────────────────────────────────────────
 
-    /** Strip legacy &-codes and MiniMessage tags from a string for plain-text display. */
-    private String stripColors(String text) {
-        if (text == null) return "";
-        return text.replaceAll("&[0-9a-fk-orA-FK-Or]", "")
-                   .replaceAll("<[^>]+>", "");
+    private HourlyItem resolveCurrentCost(HourlyItem item) {
+        if (!item.hasVariableCost()) {
+            return item;
+        }
+
+        double min = item.getMinCost();
+        double max = item.getMaxCost();
+        if (isWholeNumber(min) && isWholeNumber(max)) {
+            long rolled = ThreadLocalRandom.current().nextLong((long) min, (long) max + 1);
+            return item.withCost(rolled);
+        }
+
+        return item.withCost(ThreadLocalRandom.current().nextDouble(min, max));
     }
 
     /**
-     * Parse a cost string such as "5000000", "5m", "50k", "2b", or "1t".
-     * Returns -1 for free / unparseable values.
+     * Parse a cost string such as "5000000", "5m", "50k", "2b", "1t",
+     * or a range such as "10k-100k".
+     * Returns a free-item range for empty or unparseable values.
      */
-    private static double parseCost(String cost) {
-        if (cost == null || cost.isEmpty()) return -1;
+    private CostRange parseCostRange(String cost) {
+        if (cost == null || cost.isEmpty()) return new CostRange(-1, -1);
         cost = cost.trim().toLowerCase();
-        if (cost.equals("-1") || cost.equals("free")) return -1;
+        if (cost.equals("-1") || cost.equals("free")) return new CostRange(-1, -1);
+
+        String[] parts = cost.split("\\s*-\\s*", 2);
+        if (parts.length == 2) {
+            double min = parseSingleCost(parts[0]);
+            double max = parseSingleCost(parts[1]);
+            if (min >= 0 && max >= 0) {
+                return new CostRange(Math.min(min, max), Math.max(min, max));
+            }
+            plugin.getLogger().warning("[HourlyShop] Invalid cost range '" + cost + "' - treating as free.");
+            return new CostRange(-1, -1);
+        }
+
+        double fixedCost = parseSingleCost(cost);
+        return fixedCost >= 0 ? new CostRange(fixedCost, fixedCost) : new CostRange(-1, -1);
+    }
+
+    private static double parseSingleCost(String cost) {
         try {
             if (cost.endsWith("t")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000_000L;
             if (cost.endsWith("b")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000;
@@ -244,6 +226,12 @@ public class HourlyItemManager {
             return -1;
         }
     }
+
+    private static boolean isWholeNumber(double value) {
+        return Math.floor(value) == value;
+    }
+
+    private record CostRange(double min, double max) {}
 
     // ── Accessors ─────────────────────────────────────────────
 

@@ -99,17 +99,6 @@ hourly-shop:
       - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
     glow: true
 
-  # Rare-item settings
-  # An item is "rare" when its weight is ≤ this % of the total pool weight.
-  # Rare items trigger a server-wide chat announcement + sound.
-  rare:
-    threshold-percent: 5.0
-    # {names} = comma-separated list of rare item display names (colors stripped)
-    announcement: "&d&l{names} &d&lis in the hourly shop!!"
-    sound: "ENTITY_ENDER_DRAGON_GROWL"
-    sound-volume: 1.0
-    sound-pitch: 1.0
-
 # ============================================================
 #  ᴍᴀɪɴ ᴍᴇɴᴜ
 # ============================================================

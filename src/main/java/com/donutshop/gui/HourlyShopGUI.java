@@ -79,8 +79,6 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         List<Integer> itemSlots = configManager.getHourlyShopItemSlots();
         Map<Integer, HourlyItem> slotMapping = new HashMap<>();
 
-        int totalWeight = manager.getItemPool().stream().mapToInt(HourlyItem::getWeight).sum();
-        double rareThreshold = configManager.getHourlyRareThresholdPercent();
         ConfigManager.CurrencyConfig currency = configManager.getDefaultCurrencyConfig();
 
         if (currentItems.isEmpty()) {
@@ -125,10 +123,6 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             if (hourlyItem.getPurchaseLimit() > 0) {
                 int bought = manager.getPurchaseCount(player.getUniqueId(), hourlyItem.getId());
                 loreLines.add("<gray>ʙᴏᴜɢʜᴛ: <yellow>" + bought + "<gray>/" + hourlyItem.getPurchaseLimit());
-            }
-            // Rare badge
-            if (totalWeight > 0 && 100.0 * hourlyItem.getWeight() / totalWeight <= rareThreshold) {
-                loreLines.add("<light_purple><bold>★ RARE</bold></light_purple>");
             }
             loreLines.add("");
             loreLines.add("<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙᴜʏ!");
