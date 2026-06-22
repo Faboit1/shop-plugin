@@ -98,7 +98,7 @@ public class HourlyItemManager {
                 commands = Collections.emptyList();
             }
 
-            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, costRange.min(), costRange.min(),
+            itemPool.add(HourlyItem.withCostRange(id, type, material, name, lore, weight, costRange.min(),
                     costRange.max(), commands,
                     sec.getInt("purchaselimit", -1)));
         }

@@ -43,6 +43,13 @@ public class HourlyItem {
         this.purchaseLimit = purchaseLimit;
     }
 
+    public static HourlyItem withCostRange(String id, String type, String material, String name,
+                                           List<String> lore, int weight, double minCost, double maxCost,
+                                           List<String> commands, int purchaseLimit) {
+        return new HourlyItem(id, type, material, name, lore, weight, minCost, minCost, maxCost, commands,
+                purchaseLimit);
+    }
+
     public String getId() { return id; }
     public String getType() { return type; }
     public String getMaterial() { return material; }
