@@ -98,7 +98,7 @@ public class HourlyItemManager {
                 commands = Collections.emptyList();
             }
 
-            itemPool.add(HourlyItem.withCostRange(id, type, material, name, lore, weight, costRange.min(),
+            itemPool.add(HourlyItem.fromConfiguredCost(id, type, material, name, lore, weight, costRange.min(),
                     costRange.max(), commands,
                     sec.getInt("purchaselimit", -1)));
         }
@@ -183,7 +183,9 @@ public class HourlyItemManager {
         double min = item.getMinCost();
         double max = item.getMaxCost();
         if (isWholeNumber(min) && isWholeNumber(max)) {
-            long rolled = ThreadLocalRandom.current().nextLong((long) min, (long) max + 1);
+            long minLong = Math.round(min);
+            long maxLong = Math.round(max);
+            long rolled = ThreadLocalRandom.current().nextLong(minLong, maxLong + 1);
             return item.withCost(rolled);
         }
 
@@ -217,18 +219,23 @@ public class HourlyItemManager {
 
     private static double parseSingleCost(String cost) {
         try {
-            if (cost.endsWith("t")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000_000L;
-            if (cost.endsWith("b")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000;
-            if (cost.endsWith("m")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000;
-            if (cost.endsWith("k")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000;
-            return Double.parseDouble(cost);
+            cost = cost.trim();
+            if (cost.endsWith("t")) return finiteOrInvalid(Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000_000L);
+            if (cost.endsWith("b")) return finiteOrInvalid(Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000);
+            if (cost.endsWith("m")) return finiteOrInvalid(Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000);
+            if (cost.endsWith("k")) return finiteOrInvalid(Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000);
+            return finiteOrInvalid(Double.parseDouble(cost));
         } catch (NumberFormatException e) {
             return -1;
         }
     }
 
+    private static double finiteOrInvalid(double value) {
+        return Double.isFinite(value) ? value : -1;
+    }
+
     private static boolean isWholeNumber(double value) {
-        return Math.floor(value) == value;
+        return Double.isFinite(value) && Math.floor(value) == value;
     }
 
     private record CostRange(double min, double max) {}

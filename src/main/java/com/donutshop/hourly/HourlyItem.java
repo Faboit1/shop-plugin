@@ -43,10 +43,11 @@ public class HourlyItem {
         this.purchaseLimit = purchaseLimit;
     }
 
-    public static HourlyItem withCostRange(String id, String type, String material, String name,
-                                           List<String> lore, int weight, double minCost, double maxCost,
-                                           List<String> commands, int purchaseLimit) {
-        return new HourlyItem(id, type, material, name, lore, weight, minCost, minCost, maxCost, commands,
+    public static HourlyItem fromConfiguredCost(String id, String type, String material, String name,
+                                                List<String> lore, int weight, double minCost, double maxCost,
+                                                List<String> commands, int purchaseLimit) {
+        double initialCost = minCost == maxCost ? minCost : Double.NaN;
+        return new HourlyItem(id, type, material, name, lore, weight, initialCost, minCost, maxCost, commands,
                 purchaseLimit);
     }
 
