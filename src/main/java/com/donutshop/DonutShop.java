@@ -46,8 +46,7 @@ public class DonutShop extends JavaPlugin {
         getServer().getScheduler().runTaskLater(this, () -> {
             economyManager = new EconomyManager(
                 this,
-                configManager.getEconomyProvider(),
-                configManager.getCoinsEngineCurrency()
+                configManager.getDefaultCurrencyConfig()
             );
             
             if (!economyManager.isReady()) {
@@ -122,8 +121,7 @@ public class DonutShop extends JavaPlugin {
         // Re-create economy manager with potentially new settings
         economyManager = new EconomyManager(
             this,
-            configManager.getEconomyProvider(),
-            configManager.getCoinsEngineCurrency()
+            configManager.getDefaultCurrencyConfig()
         );
         // Reload hourly shop (re-reads hourly-items.yml and reschedules)
         if (hourlyItemManager != null) {

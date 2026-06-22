@@ -17,8 +17,10 @@ public class ConfigManager {
 
     private String economyProvider;
     private String coinsEngineCurrency;
+    private String excellentEconomyCurrency;
     private String currencySymbol;
     private boolean useSmallCaps;
+    private CurrencyConfig defaultCurrency;
 
     private boolean prefixEnabled;
     private final Map<String, String> messages = new LinkedHashMap<>();
@@ -104,8 +106,10 @@ public class ConfigManager {
     private void loadSettings(FileConfiguration config) {
         economyProvider = config.getString("settings.economy-provider", "auto");
         coinsEngineCurrency = config.getString("settings.coinsengine-currency", "coins");
+        excellentEconomyCurrency = config.getString("settings.excellenteconomy-currency", "money");
         currencySymbol = config.getString("settings.currency-symbol", "$");
         useSmallCaps = config.getBoolean("settings.use-small-caps", true);
+        defaultCurrency = new CurrencyConfig(economyProvider, getDefaultCurrencyId(economyProvider), currencySymbol);
 
         // Sounds
         soundBuy = config.getString("settings.sounds.buy", "ENTITY_EXPERIENCE_ORB_PICKUP");
@@ -291,6 +295,7 @@ public class ConfigManager {
                 cat.fillerEnabled = catSection.getBoolean("filler.enabled", true);
                 cat.fillerMaterial = catSection.getString("filler.material", defaultFillerMaterial);
                 cat.fillerName = catSection.getString("filler.name", defaultFillerName);
+                cat.currency = loadCategoryCurrency(catSection);
 
                 cat.items = loadItems(catSection);
             } else {
@@ -299,6 +304,7 @@ public class ConfigManager {
                 cat.fillerEnabled = true;
                 cat.fillerMaterial = defaultFillerMaterial;
                 cat.fillerName = defaultFillerName;
+                cat.currency = defaultCurrency;
                 cat.items = Collections.emptyList();
             }
 
@@ -334,6 +340,35 @@ public class ConfigManager {
         return items;
     }
 
+    private CurrencyConfig loadCategoryCurrency(ConfigurationSection catSection) {
+        ConfigurationSection currencySection = catSection.getConfigurationSection("currency");
+        if (currencySection == null) {
+            return defaultCurrency;
+        }
+
+        String provider = currencySection.getString("provider", "default");
+        if (provider == null || provider.isBlank() || provider.equalsIgnoreCase("default")) {
+            return defaultCurrency;
+        }
+
+        String id = currencySection.getString("id", getDefaultCurrencyId(provider));
+        String symbol = currencySection.getString("symbol", defaultCurrency.getSymbol());
+        return new CurrencyConfig(provider, id, symbol);
+    }
+
+    private String getDefaultCurrencyId(String provider) {
+        if (provider == null) {
+            return "";
+        }
+        if (provider.equalsIgnoreCase("coinsengine")) {
+            return coinsEngineCurrency;
+        }
+        if (provider.equalsIgnoreCase("excellenteconomy")) {
+            return excellentEconomyCurrency;
+        }
+        return "";
+    }
+
     // ── Accessors ─────────────────────────────────────────────
 
     public String getEconomyProvider() {
@@ -344,8 +379,16 @@ public class ConfigManager {
         return coinsEngineCurrency;
     }
 
+    public String getExcellentEconomyCurrency() {
+        return excellentEconomyCurrency;
+    }
+
     public String getCurrencySymbol() {
         return currencySymbol;
+    }
+
+    public CurrencyConfig getDefaultCurrencyConfig() {
+        return defaultCurrency;
     }
 
     public boolean useSmallCaps() {
@@ -465,6 +508,7 @@ public class ConfigManager {
         private String fillerMaterial;
         private String fillerName;
         private boolean fillerEnabled;
+        private CurrencyConfig currency;
         private List<ShopItem> items;
 
         public String getId() { return id; }
@@ -479,7 +523,24 @@ public class ConfigManager {
         public String getFillerMaterial() { return fillerMaterial; }
         public String getFillerName() { return fillerName; }
         public boolean isFillerEnabled() { return fillerEnabled; }
+        public CurrencyConfig getCurrency() { return currency; }
         public List<ShopItem> getItems() { return items; }
+    }
+
+    public static class CurrencyConfig {
+        private final String provider;
+        private final String id;
+        private final String symbol;
+
+        public CurrencyConfig(String provider, String id, String symbol) {
+            this.provider = provider == null ? "auto" : provider;
+            this.id = id == null ? "" : id;
+            this.symbol = symbol == null ? "$" : symbol;
+        }
+
+        public String getProvider() { return provider; }
+        public String getId() { return id; }
+        public String getSymbol() { return symbol; }
     }
 
     public static class ShopItem {

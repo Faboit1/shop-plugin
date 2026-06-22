@@ -16,11 +16,13 @@
 # ============================================================
 
 settings:
-  # Economy provider: "vault", "coinsengine", or "auto"
-  # "auto" will try Vault first, then CoinsEngine
+  # Economy provider: "vault", "coinsengine", "excellenteconomy", or "auto"
+  # "auto" will try Vault first, then CoinsEngine, then ExcellentEconomy
   economy-provider: "auto"
   # CoinsEngine currency name (only used if CoinsEngine is the provider)
   coinsengine-currency: "coins"
+  # ExcellentEconomy currency id (only used if ExcellentEconomy is the provider)
+  excellenteconomy-currency: "money"
   # Currency symbol for display
   currency-symbol: "$"
   # Whether to convert text to small caps automatically
@@ -169,6 +171,17 @@ main-menu:
         - ""
         - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
       icon-glow: true
+    # Example extra category button for a shard shop:
+    # shards:
+    #   slot: 16
+    #   icon-material: QUARTZ
+    #   icon-name: "<aqua>Quartz Shards"
+    #   icon-lore:
+    #     - ""
+    #     - "<gray>Buy items with your shard currency"
+    #     - ""
+    #     - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+    #   icon-glow: true
 
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀʏ ɢᴜɪ ᴅᴇғᴀᴜʟᴛs
@@ -248,8 +261,25 @@ confirmation-gui:
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀɪᴇs
 #  Each category defines its GUI and items
+#  You can override a category's currency with:
+#    currency:
+#      provider: excellenteconomy
+#      id: shards
+#      symbol: "✦"
 # ============================================================
 categories:
+
+  # Example shard shop category:
+  # shards:
+  #   title: "<aqua>Quartz Shards"
+  #   currency:
+  #     provider: excellenteconomy
+  #     id: shards
+  #     symbol: "✦"
+  #   items:
+  #     - material: ENDER_PEARL
+  #       buy-price: 8
+  #       slot: -1
 
   # ============================================================
   #  ʙʟᴏᴄᴋs
@@ -671,4 +701,3 @@ categories:
       - material: PHANTOM_MEMBRANE
         buy-price: 50.0
         slot: -1
-

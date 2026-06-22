@@ -2,6 +2,7 @@ package com.donutshop.gui;
 
 import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
+import com.donutshop.economy.EconomyManager;
 import com.donutshop.hourly.HourlyItem;
 import com.donutshop.hourly.HourlyItemManager;
 import com.donutshop.util.ItemBuilder;
@@ -80,7 +81,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
 
         int totalWeight = manager.getItemPool().stream().mapToInt(HourlyItem::getWeight).sum();
         double rareThreshold = configManager.getHourlyRareThresholdPercent();
-        String currencySymbol = configManager.getCurrencySymbol();
+        ConfigManager.CurrencyConfig currency = configManager.getDefaultCurrencyConfig();
 
         if (currentItems.isEmpty()) {
             // Show an informational placeholder in the centre slot
@@ -116,7 +117,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             List<String> loreLines = new ArrayList<>(hourlyItem.getLore());
             loreLines.add("");
             if (hourlyItem.getCost() > 0) {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
+                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + formatPrice(hourlyItem.getCost(), currency));
             } else {
                 loreLines.add("<gray>ᴄᴏsᴛ: <green>FREE");
             }
@@ -224,6 +225,14 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         } catch (IllegalArgumentException ignored) {
             return fallback;
         }
+    }
+
+    private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
+        EconomyManager economy = plugin.getEconomyManager();
+        if (economy != null) {
+            return economy.formatBalance(amount, currency);
+        }
+        return currency.getSymbol() + NumberFormatter.format(amount);
     }
 
     @Override

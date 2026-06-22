@@ -8,7 +8,8 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 - **5 Shop Categories** — Blocks, Farming, Mob Drops, Food, Ores & Minerals
 - **Normal Item Display** — Item names shown in normal Title Case formatting with configurable cost display
 - **Insanely Customizable Config** — Change all items, sections, prices, add pages, modify GUI layout, colors, navigation buttons, sounds, and more
-- **Dual Economy Support** — Works with Vault and CoinsEngine (CoinsEngine as fallback via reflection)
+- **Multi-Economy Support** — Works with Vault, CoinsEngine, and ExcellentEconomy
+- **Per-Category Currencies** — Let specific shop sections use their own configured currency
 - **MiniMessage Support** — Full MiniMessage color/gradient/formatting in all text
 - **Pagination** — Automatic page system for categories with many items (9 items per page)
 - **Buy & Sell** — Left-click to buy, right-click to sell, shift+click for stacks, middle-click to sell all
@@ -36,8 +37,9 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 
 All configuration is in `config.yml`. You can customize:
 
-- **Economy provider** — Choose between Vault, CoinsEngine, or auto-detect
+- **Economy provider** — Choose between Vault, CoinsEngine, ExcellentEconomy, or auto-detect
 - **Currency symbol** — Customize the currency display symbol
+- **Category currency overrides** — Point a specific category at its own provider/currency ID (for example a shard shop)
 - **Messages** — All messages with MiniMessage formatting and `{prefix}` support
 - **Main menu** — Title, size, filler material, category icon positions
 - **Categories** — Add/remove categories, change icons, lore, glow effects
@@ -51,7 +53,7 @@ All configuration is in `config.yml`. You can customize:
 ## Dependencies
 
 - **Required:** Paper 1.21+ (or compatible fork)
-- **Optional:** Vault (with an economy provider), CoinsEngine
+- **Optional:** Vault (with an economy provider), CoinsEngine, ExcellentEconomy
 
 ## Building
 

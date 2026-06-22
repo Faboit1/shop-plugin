@@ -78,6 +78,7 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
 
     private void refreshInventory(Player player, HourlyConfirmData data) {
         HourlyItem item = data.hourlyItem;
+        ConfigManager.CurrencyConfig currency = configManager.getDefaultCurrencyConfig();
 
         // Clamp amount to the remaining purchase allowance
         int max = maxAmount(player, item);
@@ -139,14 +140,13 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
         inv.setItem(SLOT_BACK, backBuilder.build());
 
         // Cost info
-        String currencySymbol = configManager.getCurrencySymbol();
         double unitCost = item.getCost();
         double totalCost = unitCost > 0 ? unitCost * amount : 0;
         ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
         List<String> costLore = new ArrayList<>();
         costLore.add("");
         costLore.add("<italic><gray>ᴄᴏsᴛ: <green>"
-                + (unitCost > 0 ? currencySymbol + NumberFormatter.format(totalCost) : "FREE")
+                + (unitCost > 0 ? formatPrice(totalCost, currency) : "FREE")
                 + "</italic>");
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
                 .rawName(costInfoBtn.getName())
@@ -225,7 +225,8 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
 
     private void handleConfirmPurchase(Player player, HourlyConfirmData data) {
         EconomyManager economy = plugin.getEconomyManager();
-        if (economy == null || !economy.isReady()) {
+        ConfigManager.CurrencyConfig currency = configManager.getDefaultCurrencyConfig();
+        if (economy == null || !economy.isReady(currency)) {
             player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Economy is not available!"));
             return;
         }
@@ -245,12 +246,11 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
         }
         int amount = Math.min(data.amount, max);
 
-        String currencySymbol = configManager.getCurrencySymbol();
         double unitCost = item.getCost();
         double totalCost = unitCost > 0 ? unitCost * amount : 0;
 
         // Check funds
-        if (totalCost > 0 && !economy.has(player, totalCost)) {
+        if (totalCost > 0 && !economy.has(player, currency, totalCost)) {
             playSound(player, configManager.getSoundError());
             String msg = configManager.getMessage("not-enough-money");
             if (msg.isEmpty()) msg = "<red>ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ᴍᴏɴᴇʏ!";
@@ -266,7 +266,7 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
-            if (totalCost > 0 && !economy.withdraw(player, totalCost)) {
+            if (totalCost > 0 && !economy.withdraw(player, currency, totalCost)) {
                 playSound(player, configManager.getSoundError());
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
                 return;
@@ -280,7 +280,7 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
                 int notAdded = leftover.values().stream().mapToInt(ItemStack::getAmount).sum();
                 if (unitCost > 0) {
                     double refund = unitCost * notAdded;
-                    economy.deposit(player, refund);
+                    economy.deposit(player, currency, refund);
                     totalCost -= refund;
                 }
                 given -= notAdded;
@@ -300,12 +300,12 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
             String msg = configManager.getMessage("buy-success")
                     .replace("{amount}", String.valueOf(given))
                     .replace("{item}", itemName)
-                    .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
+                    .replace("{price}", formatPrice(totalCost, currency));
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
 
         } else {
             // ── Command item ───────────────────────────────
-            if (totalCost > 0 && !economy.withdraw(player, totalCost)) {
+            if (totalCost > 0 && !economy.withdraw(player, currency, totalCost)) {
                 playSound(player, configManager.getSoundError());
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
                 return;
@@ -325,7 +325,7 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
             String msg = configManager.getMessage("buy-success")
                     .replace("{amount}", String.valueOf(amount))
                     .replace("{item}", itemName)
-                    .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
+                    .replace("{price}", formatPrice(totalCost, currency));
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
         }
 
@@ -364,6 +364,14 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
         if (limit > 0) {
             int bought = plugin.getHourlyItemManager().getPurchaseCount(player.getUniqueId(), item.getId());
             return Math.max(0, Math.min(MAX_BULK_AMOUNT, limit - bought));
+        }
+
+        private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
+            EconomyManager economy = plugin.getEconomyManager();
+            if (economy != null) {
+                return economy.formatBalance(amount, currency);
+            }
+            return currency.getSymbol() + NumberFormatter.format(amount);
         }
         return MAX_BULK_AMOUNT;
     }
