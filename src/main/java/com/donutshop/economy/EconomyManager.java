@@ -12,6 +12,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EconomyManager {
 
@@ -415,20 +417,49 @@ public class EconomyManager {
         String providerName = getEffectiveProvider(currency);
         String currencyId = getEffectiveCurrencyId(currency);
         if (providerName.equalsIgnoreCase("vault") && setupVault() && vaultEconomy != null) {
-            return vaultEconomy.format(amount);
+            return colorizePrice(vaultEconomy.format(amount));
         }
         if (providerName.equalsIgnoreCase("excellenteconomy")) {
             try {
                 if (setupExcellentEconomy(currencyId)) {
                     Object excellentCurrency = getExcellentEconomyCurrency(currencyId);
                     if (excellentCurrency != null) {
-                        return String.valueOf(excellentEconomyFormatMethod.invoke(excellentCurrency, amount));
+                        return colorizePrice(String.valueOf(excellentEconomyFormatMethod.invoke(excellentCurrency, amount)));
                     }
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to format ExcellentEconomy amount: " + e.getMessage());
             }
         }
-        return currency.getSymbol() + NumberFormatter.format(amount);
+        return colorizePrice(currency.getSymbol() + NumberFormatter.format(amount));
+    }
+
+    // Matches unconverted legacy formatting codes (e.g. "&a", "&l", "§a") that some
+    // economy providers embed in their formatted balance strings.
+    private static final Pattern LEGACY_CODE = Pattern.compile("(?i)[&\u00A7][0-9a-fk-or]");
+
+    // Splits a plain formatted price into its leading amount (digits, possibly with an
+    // attached symbol, e.g. "$60" or "60") and a trailing currency name (e.g. "Shards").
+    private static final Pattern AMOUNT_AND_NAME = Pattern.compile("^(\\S*?[0-9][0-9.,]*)(\\s*.*)$", Pattern.DOTALL);
+
+    /**
+     * Sanitizes a raw balance string returned by an economy provider and returns a
+     * MiniMessage-safe string: any unconverted legacy color codes are stripped, the
+     * numeric amount (with its symbol) is colored white, and a trailing currency name
+     * (if present) is colored gray.
+     */
+    private static String colorizePrice(String raw) {
+        if (raw == null) return "";
+        String plain = LEGACY_CODE.matcher(raw).replaceAll("");
+        Matcher matcher = AMOUNT_AND_NAME.matcher(plain);
+        if (matcher.matches()) {
+            String amountPart = matcher.group(1);
+            String namePart = matcher.group(2).trim();
+            if (namePart.isEmpty()) {
+                return "<white>" + amountPart + "</white>";
+            }
+            return "<white>" + amountPart + "</white> <gray>" + namePart + "</gray>";
+        }
+        return "<white>" + plain + "</white>";
     }
 }

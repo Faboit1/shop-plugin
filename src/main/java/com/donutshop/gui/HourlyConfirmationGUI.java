@@ -145,8 +145,8 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
         ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
         List<String> costLore = new ArrayList<>();
         costLore.add("");
-        costLore.add("<italic><gray>ᴄᴏsᴛ: <green>"
-                + (unitCost > 0 ? formatPrice(totalCost, currency) : "FREE")
+        costLore.add("<italic><gray>ᴄᴏsᴛ: "
+                + (unitCost > 0 ? formatPrice(totalCost, currency) : "<white>FREE")
                 + "</italic>");
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
                 .rawName(costInfoBtn.getName())

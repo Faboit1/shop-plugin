@@ -162,7 +162,7 @@ public class ConfigManager {
         if (itemLoreFormat.isEmpty()) {
             itemLoreFormat = new ArrayList<>();
             itemLoreFormat.add("");
-            itemLoreFormat.add("<gray>Cost: <green>{cost}");
+            itemLoreFormat.add("<gray>Cost: {cost}");
         }
     }
 

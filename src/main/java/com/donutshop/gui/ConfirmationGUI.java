@@ -123,7 +123,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
                 .rawName(costInfoBtn.getName())
-                .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: <green>" + formatPrice(totalCost, currency) + "</italic>"))
+                .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: " + formatPrice(totalCost, currency) + "</italic>"))
                 .build());
 
         // Confirm button

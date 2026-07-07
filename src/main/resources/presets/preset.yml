@@ -130,7 +130,7 @@ category-gui:
       name: "<red>Close"
   item-lore:
     - ""
-    - "<gray>Cost: <green>{cost}"
+    - "<gray>Cost: {cost}"
 
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀɪᴇs

@@ -211,7 +211,7 @@ category-gui:
   # Available placeholders: {cost}, {buy}, {sell}, {item}
   item-lore:
     - ""
-    - "<italic><gray>ᴄᴏsᴛ: <green>{cost}</italic>"
+    - "<italic><gray>ᴄᴏsᴛ: {cost}</italic>"
 
 # ============================================================
 #  ᴄᴏɴғɪʀᴍᴀᴛɪᴏɴ ɢᴜɪ

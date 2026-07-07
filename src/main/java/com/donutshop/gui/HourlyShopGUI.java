@@ -115,9 +115,9 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             List<String> loreLines = new ArrayList<>(hourlyItem.getLore());
             loreLines.add("");
             if (hourlyItem.getCost() > 0) {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + formatPrice(hourlyItem.getCost(), currency));
+                loreLines.add("<gray>ᴄᴏsᴛ: " + formatPrice(hourlyItem.getCost(), currency));
             } else {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>FREE");
+                loreLines.add("<gray>ᴄᴏsᴛ: <white>FREE");
             }
             // Purchase limit badge
             if (hourlyItem.getPurchaseLimit() > 0) {
