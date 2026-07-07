@@ -17,8 +17,10 @@ public class ConfigManager {
 
     private String economyProvider;
     private String coinsEngineCurrency;
+    private String excellentEconomyCurrency;
     private String currencySymbol;
     private boolean useSmallCaps;
+    private CurrencyConfig defaultCurrency;
 
     private boolean prefixEnabled;
     private final Map<String, String> messages = new LinkedHashMap<>();
@@ -104,8 +106,10 @@ public class ConfigManager {
     private void loadSettings(FileConfiguration config) {
         economyProvider = config.getString("settings.economy-provider", "auto");
         coinsEngineCurrency = config.getString("settings.coinsengine-currency", "coins");
+        excellentEconomyCurrency = config.getString("settings.excellenteconomy-currency", "money");
         currencySymbol = config.getString("settings.currency-symbol", "$");
         useSmallCaps = config.getBoolean("settings.use-small-caps", true);
+        defaultCurrency = new CurrencyConfig(economyProvider, getDefaultCurrencyId(economyProvider), currencySymbol);
 
         // Sounds
         soundBuy = config.getString("settings.sounds.buy", "ENTITY_EXPERIENCE_ORB_PICKUP");
@@ -158,7 +162,7 @@ public class ConfigManager {
         if (itemLoreFormat.isEmpty()) {
             itemLoreFormat = new ArrayList<>();
             itemLoreFormat.add("");
-            itemLoreFormat.add("<gray>Cost: <green>{cost}");
+            itemLoreFormat.add("<gray>Cost: {cost}");
         }
     }
 
@@ -291,6 +295,7 @@ public class ConfigManager {
                 cat.fillerEnabled = catSection.getBoolean("filler.enabled", true);
                 cat.fillerMaterial = catSection.getString("filler.material", defaultFillerMaterial);
                 cat.fillerName = catSection.getString("filler.name", defaultFillerName);
+                cat.currency = loadCategoryCurrency(catSection);
 
                 cat.items = loadItems(catSection);
             } else {
@@ -299,6 +304,7 @@ public class ConfigManager {
                 cat.fillerEnabled = true;
                 cat.fillerMaterial = defaultFillerMaterial;
                 cat.fillerName = defaultFillerName;
+                cat.currency = defaultCurrency;
                 cat.items = Collections.emptyList();
             }
 
@@ -317,6 +323,7 @@ public class ConfigManager {
             Map<String, Object> map = (Map<String, Object>) obj;
 
             ShopItem item = new ShopItem();
+            item.type = String.valueOf(map.getOrDefault("type", "ITEM")).toUpperCase();
             item.material = String.valueOf(map.getOrDefault("material", "STONE"));
             item.name = map.containsKey("name") ? String.valueOf(map.get("name")) : null;
             if (map.containsKey("lore") && map.get("lore") instanceof List) {
@@ -328,10 +335,40 @@ public class ConfigManager {
             item.slot = map.containsKey("slot") ? ((Number) map.get("slot")).intValue() : -1;
             item.amount = map.containsKey("amount") ? ((Number) map.get("amount")).intValue() : 1;
             item.customModelData = map.containsKey("custom-model-data") ? ((Number) map.get("custom-model-data")).intValue() : -1;
+            item.command = map.containsKey("command") ? String.valueOf(map.get("command")) : null;
 
             items.add(item);
         }
         return items;
+    }
+
+    private CurrencyConfig loadCategoryCurrency(ConfigurationSection catSection) {
+        ConfigurationSection currencySection = catSection.getConfigurationSection("currency");
+        if (currencySection == null) {
+            return defaultCurrency;
+        }
+
+        String provider = currencySection.getString("provider", "default");
+        if (provider == null || provider.isBlank() || provider.equalsIgnoreCase("default")) {
+            return defaultCurrency;
+        }
+
+        String id = currencySection.getString("id", getDefaultCurrencyId(provider));
+        String symbol = currencySection.getString("symbol", defaultCurrency.getSymbol());
+        return new CurrencyConfig(provider, id, symbol);
+    }
+
+    private String getDefaultCurrencyId(String provider) {
+        if (provider == null) {
+            return "";
+        }
+        if (provider.equalsIgnoreCase("coinsengine")) {
+            return coinsEngineCurrency;
+        }
+        if (provider.equalsIgnoreCase("excellenteconomy")) {
+            return excellentEconomyCurrency;
+        }
+        return "";
     }
 
     // ── Accessors ─────────────────────────────────────────────
@@ -344,8 +381,16 @@ public class ConfigManager {
         return coinsEngineCurrency;
     }
 
+    public String getExcellentEconomyCurrency() {
+        return excellentEconomyCurrency;
+    }
+
     public String getCurrencySymbol() {
         return currencySymbol;
+    }
+
+    public CurrencyConfig getDefaultCurrencyConfig() {
+        return defaultCurrency;
     }
 
     public boolean useSmallCaps() {
@@ -465,6 +510,7 @@ public class ConfigManager {
         private String fillerMaterial;
         private String fillerName;
         private boolean fillerEnabled;
+        private CurrencyConfig currency;
         private List<ShopItem> items;
 
         public String getId() { return id; }
@@ -479,10 +525,28 @@ public class ConfigManager {
         public String getFillerMaterial() { return fillerMaterial; }
         public String getFillerName() { return fillerName; }
         public boolean isFillerEnabled() { return fillerEnabled; }
+        public CurrencyConfig getCurrency() { return currency; }
         public List<ShopItem> getItems() { return items; }
     }
 
+    public static class CurrencyConfig {
+        private final String provider;
+        private final String id;
+        private final String symbol;
+
+        public CurrencyConfig(String provider, String id, String symbol) {
+            this.provider = provider == null ? "auto" : provider;
+            this.id = id == null ? "" : id;
+            this.symbol = symbol == null ? "$" : symbol;
+        }
+
+        public String getProvider() { return provider; }
+        public String getId() { return id; }
+        public String getSymbol() { return symbol; }
+    }
+
     public static class ShopItem {
+        private String type = "ITEM";
         private String material;
         private String name;
         private List<String> lore;
@@ -491,7 +555,10 @@ public class ConfigManager {
         private int slot = -1;
         private int amount = 1;
         private int customModelData = -1;
+        private String command;
 
+        public String getType() { return type; }
+        public boolean isCommand() { return "COMMAND".equalsIgnoreCase(type); }
         public String getMaterial() { return material; }
         public String getName() { return name; }
         public List<String> getLore() { return lore; }
@@ -500,6 +567,7 @@ public class ConfigManager {
         public int getSlot() { return slot; }
         public int getAmount() { return amount; }
         public int getCustomModelData() { return customModelData; }
+        public String getCommand() { return command; }
     }
 
     public static class ButtonConfig {

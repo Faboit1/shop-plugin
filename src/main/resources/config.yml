@@ -16,11 +16,14 @@
 # ============================================================
 
 settings:
-  # Economy provider: "vault", "coinsengine", or "auto"
-  # "auto" will try Vault first, then CoinsEngine
-  economy-provider: "auto"
+  # Economy provider: "vault", "coinsengine", "excellenteconomy", or "auto"
+  # "auto" will try Vault first, then CoinsEngine, then ExcellentEconomy
+  # Set to "excellenteconomy" if you want to use ExcellentEconomy directly
+  economy-provider: "excellenteconomy"
   # CoinsEngine currency name (only used if CoinsEngine is the provider)
   coinsengine-currency: "coins"
+  # ExcellentEconomy currency id (only used if ExcellentEconomy is the provider)
+  excellenteconomy-currency: "money"
   # Currency symbol for display
   currency-symbol: "$"
   # Whether to convert text to small caps automatically
@@ -97,22 +100,11 @@ hourly-shop:
       - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
     glow: true
 
-  # Rare-item settings
-  # An item is "rare" when its weight is ≤ this % of the total pool weight.
-  # Rare items trigger a server-wide chat announcement + sound.
-  rare:
-    threshold-percent: 5.0
-    # {names} = comma-separated list of rare item display names (colors stripped)
-    announcement: "&d&l{names} &d&lis in the hourly shop!!"
-    sound: "ENTITY_ENDER_DRAGON_GROWL"
-    sound-volume: 1.0
-    sound-pitch: 1.0
-
 # ============================================================
 #  ᴍᴀɪɴ ᴍᴇɴᴜ
 # ============================================================
 main-menu:
-  title: "<gradient:#ff6b6b:#ffa07a>ᴅᴏɴᴜᴛ sʜᴏᴘ</gradient>"
+  title: "<gradient:#ff6b6b:#ffa07a>sʜᴏᴘ</gradient>"
   size: 27
   filler:
     enabled: true
@@ -169,6 +161,16 @@ main-menu:
         - ""
         - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
       icon-glow: true
+    shards:
+      slot: 16
+      icon-material: QUARTZ
+      icon-name: "<aqua>ǫᴜᴀʀᴛᴢ sʜᴀʀᴅ sʜᴏᴘ"
+      icon-lore:
+        - ""
+        - "<gray>ʙᴜʏ ɪᴛᴇᴍs ᴡɪᴛʜ sʜᴀʀᴅs"
+        - ""
+        - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
+      icon-glow: true
 
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀʏ ɢᴜɪ ᴅᴇғᴀᴜʟᴛs
@@ -209,7 +211,7 @@ category-gui:
   # Available placeholders: {cost}, {buy}, {sell}, {item}
   item-lore:
     - ""
-    - "<italic><gray>ᴄᴏsᴛ: <green>{cost}</italic>"
+    - "<italic><gray>ᴄᴏsᴛ: {cost}</italic>"
 
 # ============================================================
 #  ᴄᴏɴғɪʀᴍᴀᴛɪᴏɴ ɢᴜɪ
@@ -248,6 +250,17 @@ confirmation-gui:
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀɪᴇs
 #  Each category defines its GUI and items
+#  You can override a category's currency with:
+#    currency:
+#      provider: excellenteconomy
+#      id: shards
+#      symbol: "✦"
+#
+#  Item types:
+#    type: ITEM     - Normal item (default). Gives the material to the player.
+#    type: COMMAND  - Command item. Executes a console command on purchase.
+#                    Use {player} placeholder for the buyer's name.
+#                    The material is used as the display icon only.
 # ============================================================
 categories:
 
@@ -672,3 +685,58 @@ categories:
         buy-price: 50.0
         slot: -1
 
+  # ============================================================
+  #  ǫᴜᴀʀᴛᴢ sʜᴀʀᴅ sʜᴏᴘ
+  #  Uses "shards" currency from ExcellentEconomy
+  #  Contains both normal ITEM and COMMAND type entries
+  # ============================================================
+  shards:
+    title: "<aqua>ǫᴜᴀʀᴛᴢ sʜᴀʀᴅ sʜᴏᴘ</aqua>"
+    size: 27
+    currency:
+      provider: excellenteconomy
+      id: shards
+      symbol: "✦"
+    items:
+      # ── Normal items (type: ITEM is the default) ────────────
+      - type: ITEM
+        material: SAND
+        buy-price: 67.5
+        slot: -1
+      - type: ITEM
+        material: ENDER_PEARL
+        buy-price: 8
+        slot: -1
+      - type: ITEM
+        material: DIAMOND
+        buy-price: 50
+        slot: -1
+      - type: ITEM
+        material: NETHERITE_INGOT
+        buy-price: 200
+        slot: -1
+      # ── Command items (type: COMMAND) ───────────────────────
+      - type: COMMAND
+        material: TRIPWIRE_HOOK
+        name: "<gold>ᴇᴘɪᴄ ᴄʀᴀᴛᴇ ᴋᴇʏ"
+        buy-price: 50
+        slot: -1
+        command: "crate key give {player} epic 1"
+      - type: COMMAND
+        material: NETHER_STAR
+        name: "<light_purple>ʟᴇɢᴇɴᴅᴀʀʏ ᴄʀᴀᴛᴇ ᴋᴇʏ"
+        buy-price: 150
+        slot: -1
+        command: "crate key give {player} legendary 1"
+      - type: COMMAND
+        material: EXPERIENCE_BOTTLE
+        name: "<green>1000 ᴇxᴘ"
+        buy-price: 25
+        slot: -1
+        command: "xp give {player} 1000"
+      - type: COMMAND
+        material: PAPER
+        name: "<yellow>ғʟʏ 30 ᴍɪɴᴜᴛᴇs"
+        buy-price: 100
+        slot: -1
+        command: "tempfly give {player} 30m"

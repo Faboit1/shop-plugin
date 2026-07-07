@@ -10,8 +10,9 @@
 #   name:          Display name — supports legacy &color codes (&b, &l, etc.) AND MiniMessage (<aqua>)
 #   lore:          (optional) List of lore lines in MiniMessage format
 #   weight:        Integer ≥ 1. Higher = more common. Used for weighted-random selection.
-#   cost:          Price in your economy currency. Supports plain numbers (5000000) or
-#                  shorthand: 5k (5 000), 5m (5 000 000), 5b (5 000 000 000), 5t (5 000 000 000 000).
+#   cost:          Price in your economy currency. Supports plain numbers (5000000),
+#                  shorthand: 5k (5 000), 5m (5 000 000), 5b (5 000 000 000), 5t (5 000 000 000 000),
+#                  or ranges like 10k-100k / 1238-12398 (rolled once per hourly refresh).
 #                  Use -1 for free.
 #   purchaselimit: (optional) Maximum number of times a single player can buy this item per hour.
 #                  The icon turns into a BARRIER when the limit is reached.
@@ -20,9 +21,6 @@
 # For type: command
 #   command:  Single console command — {player} and %player% are replaced with the buyer's name
 #   commands: (alternative) List of console commands executed in order
-#
-# Items whose weight% of the total pool weight is ≤ rare.threshold-percent (config.yml)
-# are considered RARE and trigger a server-wide chat announcement + sound.
 #
 # You can add as many entries as you like. Duplicate weights are fine.
 # ============================================================
@@ -97,9 +95,7 @@ items:
     weight: 20
     cost: 8000
 
-  # ── Rare items (low weight ≤ 5% of total) ──────────────────
-  # Default total weight ≈ 100+80+60+90+25+30+20+8+5+3 = 421
-  # 5% of 421 ≈ 21, so anything ≤ 8 weight triggers the rare announcement
+  # ── Exclusive items (low weight) ────────────────────────────
 
   rare_totem:
     type: material
@@ -124,14 +120,14 @@ items:
   # ── Example command item ────────────────────────────────────
   # Uncomment and customise to enable a custom command-driven item.
   #
-  # rare_drill:
+  # exclusive_drill:
   #   type: command
   #   material: IRON_PICKAXE          # Icon shown in the GUI
   #   name: "&b&lDRILL"               # Legacy color codes are supported
   #   lore:
   #     - "<gray>A powerful drill!"
   #     - "<aqua>Exclusive hourly item!"
-  #   weight: 3                       # Rare — ~0.7% of the default pool
+  #   weight: 3
   #   cost: 5m                        # 5 000 000
   #   command: "givedrill {player}"   # Executed from console; {player} = buyer's name
   #   # Or use multiple commands:

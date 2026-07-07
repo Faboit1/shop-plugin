@@ -2,6 +2,7 @@ package com.donutshop.gui;
 
 import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
+import com.donutshop.economy.EconomyManager;
 import com.donutshop.hourly.HourlyItem;
 import com.donutshop.hourly.HourlyItemManager;
 import com.donutshop.util.ItemBuilder;
@@ -78,9 +79,7 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         List<Integer> itemSlots = configManager.getHourlyShopItemSlots();
         Map<Integer, HourlyItem> slotMapping = new HashMap<>();
 
-        int totalWeight = manager.getItemPool().stream().mapToInt(HourlyItem::getWeight).sum();
-        double rareThreshold = configManager.getHourlyRareThresholdPercent();
-        String currencySymbol = configManager.getCurrencySymbol();
+        ConfigManager.CurrencyConfig currency = configManager.getDefaultCurrencyConfig();
 
         if (currentItems.isEmpty()) {
             // Show an informational placeholder in the centre slot
@@ -116,18 +115,14 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
             List<String> loreLines = new ArrayList<>(hourlyItem.getLore());
             loreLines.add("");
             if (hourlyItem.getCost() > 0) {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>" + currencySymbol + NumberFormatter.format(hourlyItem.getCost()));
+                loreLines.add("<gray>ᴄᴏsᴛ: " + formatPrice(hourlyItem.getCost(), currency));
             } else {
-                loreLines.add("<gray>ᴄᴏsᴛ: <green>FREE");
+                loreLines.add("<gray>ᴄᴏsᴛ: <white>FREE");
             }
             // Purchase limit badge
             if (hourlyItem.getPurchaseLimit() > 0) {
                 int bought = manager.getPurchaseCount(player.getUniqueId(), hourlyItem.getId());
                 loreLines.add("<gray>ʙᴏᴜɢʜᴛ: <yellow>" + bought + "<gray>/" + hourlyItem.getPurchaseLimit());
-            }
-            // Rare badge
-            if (totalWeight > 0 && 100.0 * hourlyItem.getWeight() / totalWeight <= rareThreshold) {
-                loreLines.add("<light_purple><bold>★ RARE</bold></light_purple>");
             }
             loreLines.add("");
             loreLines.add("<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙᴜʏ!");
@@ -224,6 +219,14 @@ public class HourlyShopGUI implements InventoryHolder, Listener {
         } catch (IllegalArgumentException ignored) {
             return fallback;
         }
+    }
+
+    private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
+        EconomyManager economy = plugin.getEconomyManager();
+        if (economy != null) {
+            return economy.formatBalance(amount, currency);
+        }
+        return currency.getSymbol() + NumberFormatter.format(amount);
     }
 
     @Override

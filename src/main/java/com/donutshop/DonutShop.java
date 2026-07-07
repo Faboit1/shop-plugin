@@ -46,13 +46,12 @@ public class DonutShop extends JavaPlugin {
         getServer().getScheduler().runTaskLater(this, () -> {
             economyManager = new EconomyManager(
                 this,
-                configManager.getEconomyProvider(),
-                configManager.getCoinsEngineCurrency()
+                configManager
             );
             
             if (!economyManager.isReady()) {
                 getLogger().severe("No economy provider found! The shop will not work.");
-                getLogger().severe("Please install Vault (with an economy plugin) or CoinsEngine.");
+                getLogger().severe("Please install Vault (with an economy plugin), CoinsEngine, or ExcellentEconomy.");
             }
         }, 1L);
         
@@ -122,8 +121,7 @@ public class DonutShop extends JavaPlugin {
         // Re-create economy manager with potentially new settings
         economyManager = new EconomyManager(
             this,
-            configManager.getEconomyProvider(),
-            configManager.getCoinsEngineCurrency()
+            configManager
         );
         // Reload hourly shop (re-reads hourly-items.yml and reschedules)
         if (hourlyItemManager != null) {

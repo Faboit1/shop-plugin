@@ -69,6 +69,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
     }
 
     private void refreshInventory(Player player, ConfirmationData data) {
+        ConfigManager.CurrencyConfig currency = data.returnCategory.getCurrency();
         String materialName = formatMaterialName(Material.valueOf(data.shopItem.getMaterial()));
         String title = "<white>ʙᴜʏ " + materialName;
 
@@ -118,13 +119,11 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         inv.setItem(SLOT_BACK, backBuilder.build());
 
         // Cost info
-        String currencySymbol = configManager.getCurrencySymbol();
         double totalCost = data.shopItem.getBuyPrice() * amount;
         ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
                 .rawName(costInfoBtn.getName())
-                .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: <green>" + currencySymbol +
-                        NumberFormatter.format(totalCost) + "</italic>"))
+                .rawLore(List.of("", "<italic><gray>ᴄᴏsᴛ: " + formatPrice(totalCost, currency) + "</italic>"))
                 .build());
 
         // Confirm button
@@ -198,7 +197,8 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
     private void handleConfirmPurchase(Player player, ConfirmationData data) {
         EconomyManager economy = ((DonutShop) plugin).getEconomyManager();
-        if (economy == null || !economy.isReady()) {
+        ConfigManager.CurrencyConfig currency = data.returnCategory.getCurrency();
+        if (economy == null || !economy.isReady(currency)) {
             player.sendMessage(MiniMessage.miniMessage().deserialize(
                     "<red>Economy is not available!"));
             return;
@@ -206,7 +206,6 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
         ConfigManager.ShopItem shopItem = data.shopItem;
         int amount = data.amount;
-        String currencySymbol = configManager.getCurrencySymbol();
 
         if (shopItem.getBuyPrice() < 0) {
             playSound(player, configManager.getSoundError());
@@ -217,7 +216,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
         double totalCost = shopItem.getBuyPrice() * amount;
 
-        if (!economy.has(player, totalCost)) {
+        if (!economy.has(player, currency, totalCost)) {
             playSound(player, configManager.getSoundError());
             String msg = configManager.getMessage("not-enough-money");
             if (msg.isEmpty()) msg = "<red>You don't have enough money!";
@@ -225,42 +224,53 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             return;
         }
 
-        Material mat = Material.valueOf(shopItem.getMaterial());
-
-        if (!economy.withdraw(player, totalCost)) {
+        if (!economy.withdraw(player, currency, totalCost)) {
             playSound(player, configManager.getSoundError());
             player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
             return;
         }
 
-        ItemStack itemStack = new ItemStack(mat, amount);
-        java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-        if (!leftover.isEmpty()) {
-            int notAdded = 0;
-            for (ItemStack left : leftover.values()) {
-                notAdded += left.getAmount();
+        if (shopItem.isCommand()) {
+            // Execute command for each unit purchased
+            String command = shopItem.getCommand();
+            if (command != null && !command.isBlank()) {
+                for (int i = 0; i < amount; i++) {
+                    String parsed = command.replace("{player}", player.getName());
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
+                }
             }
-            double refund = shopItem.getBuyPrice() * notAdded;
-            economy.deposit(player, refund);
-            amount -= notAdded;
-            totalCost -= refund;
+        } else {
+            Material mat = Material.valueOf(shopItem.getMaterial());
+            ItemStack itemStack = new ItemStack(mat, amount);
+            java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
 
-            if (amount <= 0) {
-                playSound(player, configManager.getSoundError());
-                String msg = configManager.getMessage("inventory-full");
-                if (msg.isEmpty()) msg = "<red>Your inventory is full!";
-                player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-                return;
+            if (!leftover.isEmpty()) {
+                int notAdded = 0;
+                for (ItemStack left : leftover.values()) {
+                    notAdded += left.getAmount();
+                }
+                double refund = shopItem.getBuyPrice() * notAdded;
+                economy.deposit(player, currency, refund);
+                amount -= notAdded;
+                totalCost -= refund;
+
+                if (amount <= 0) {
+                    playSound(player, configManager.getSoundError());
+                    String msg = configManager.getMessage("inventory-full");
+                    if (msg.isEmpty()) msg = "<red>Your inventory is full!";
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                    return;
+                }
             }
         }
 
         playSound(player, configManager.getSoundBuy());
-        String materialName = formatMaterialName(mat);
+        Material mat = Material.valueOf(shopItem.getMaterial());
+        String materialName = shopItem.getName() != null ? shopItem.getName() : formatMaterialName(mat);
         String msg = configManager.getMessage("buy-success")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
+                .replace("{price}", formatPrice(totalCost, currency));
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
 
         // Stay open - refresh the confirmation GUI (don't close)
@@ -303,6 +313,14 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             }
         }
         return formatted.toString();
+    }
+
+    private String formatPrice(double amount, ConfigManager.CurrencyConfig currency) {
+        EconomyManager economy = ((DonutShop) plugin).getEconomyManager();
+        if (economy != null) {
+            return economy.formatBalance(amount, currency);
+        }
+        return currency.getSymbol() + NumberFormatter.format(amount);
     }
 
     @EventHandler
