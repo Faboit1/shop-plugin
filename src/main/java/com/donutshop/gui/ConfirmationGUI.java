@@ -309,12 +309,13 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
     public void onClose(InventoryCloseEvent event) {
         if (!(event.getInventory().getHolder() instanceof ConfirmationGUI)) return;
         UUID uuid = event.getPlayer().getUniqueId();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        Runnable cleanup = () -> playerData.remove(uuid);
+        event.getPlayer().getScheduler().runDelayed(plugin, task -> {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !(p.getOpenInventory().getTopInventory().getHolder() instanceof ConfirmationGUI)) {
-                playerData.remove(uuid);
+                cleanup.run();
             }
-        }, 1L);
+        }, cleanup, 1);
     }
 
     @Override

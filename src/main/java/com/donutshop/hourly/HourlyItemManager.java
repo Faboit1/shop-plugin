@@ -9,7 +9,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.io.File;
 import java.util.*;
@@ -26,7 +26,7 @@ public class HourlyItemManager {
 
     private List<HourlyItem> itemPool = new ArrayList<>();
     private List<HourlyItem> currentItems = new ArrayList<>();
-    private BukkitTask scheduledTask;
+    private ScheduledTask scheduledTask;
 
     /** Tracks how many times each player has purchased each item in the current hour. */
     private final Map<UUID, Map<String, Integer>> playerPurchaseCounts = new ConcurrentHashMap<>();
@@ -185,9 +185,9 @@ public class HourlyItemManager {
         long delayTicks = Math.max(1L, delayMs / 50L);    // 1 tick = 50 ms
         long periodTicks = 72_000L;                         // 1 hour = 3600 s * 20 ticks/s
 
-        scheduledTask = plugin.getServer().getScheduler().runTaskTimer(
+        scheduledTask = Bukkit.getGlobalRegionScheduler().runAtFixedRate(
                 plugin,
-                this::refresh,
+                task -> this.refresh(),
                 delayTicks,
                 periodTicks
         );

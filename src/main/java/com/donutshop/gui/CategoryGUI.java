@@ -483,16 +483,18 @@ public class CategoryGUI implements InventoryHolder, Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (!(event.getInventory().getHolder() instanceof CategoryGUI)) return;
-        // Only clean up if not immediately re-opening (e.g. page navigation)
         UUID uuid = event.getPlayer().getUniqueId();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        Runnable cleanup = () -> {
+            playerSlotMappings.remove(uuid);
+            storedPages.remove(uuid);
+            playerCategories.remove(uuid);
+        };
+        event.getPlayer().getScheduler().runDelayed(plugin, task -> {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !(p.getOpenInventory().getTopInventory().getHolder() instanceof CategoryGUI)) {
-                playerSlotMappings.remove(uuid);
-                storedPages.remove(uuid);
-                playerCategories.remove(uuid);
+                cleanup.run();
             }
-        }, 1L);
+        }, cleanup, 1);
     }
 
     @Override

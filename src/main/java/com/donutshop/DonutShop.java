@@ -9,6 +9,7 @@ import com.donutshop.gui.HourlyConfirmationGUI;
 import com.donutshop.gui.HourlyShopGUI;
 import com.donutshop.gui.ShopGUI;
 import com.donutshop.hourly.HourlyItemManager;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -43,18 +44,18 @@ public class DonutShop extends JavaPlugin {
         configManager = new ConfigManager(this);
         
         // Initialize economy (delayed by 1 tick to ensure other plugins are loaded)
-        getServer().getScheduler().runTaskLater(this, () -> {
+        Bukkit.getGlobalRegionScheduler().runDelayed(this, task -> {
             economyManager = new EconomyManager(
                 this,
                 configManager.getEconomyProvider(),
                 configManager.getCoinsEngineCurrency()
             );
-            
+
             if (!economyManager.isReady()) {
                 getLogger().severe("No economy provider found! The shop will not work.");
                 getLogger().severe("Please install Vault (with an economy plugin) or CoinsEngine.");
             }
-        }, 1L);
+        }, 1);
         
         // Initialize GUI
         shopGUI = new ShopGUI(this, configManager);
