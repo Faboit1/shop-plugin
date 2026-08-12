@@ -2,6 +2,7 @@ name: DonutShop
 version: ${project.version}
 main: com.donutshop.DonutShop
 api-version: '1.21'
+folia-supported: true
 description: A fully customizable DonutSMP-style shop plugin
 authors:
   - DonutShop
