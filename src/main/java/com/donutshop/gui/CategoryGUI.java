@@ -39,17 +39,11 @@ public class CategoryGUI implements InventoryHolder, Listener {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
 
-    /**
-     * Constructor for event listener registration (no specific category).
-     */
     public CategoryGUI(JavaPlugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
     }
 
-    /**
-     * Opens a specific category GUI for a player at the given page.
-     */
     public void open(Player player, int page, ConfigManager.CategoryConfig category) {
         UUID uuid = player.getUniqueId();
         List<ConfigManager.ShopItem> items = category.getItems();
@@ -88,15 +82,16 @@ public class CategoryGUI implements InventoryHolder, Listener {
             inv.setItem(slot, null);
         }
 
+        // Resolve currency symbol for this category
+        String currencySymbol = resolveCurrencySymbol(category);
+
         // Place items for this page
         Map<Integer, ConfigManager.ShopItem> slotMapping = new HashMap<>();
-        String currencySymbol = configManager.getCurrencySymbol();
 
         int startIndex = page * ITEMS_PER_PAGE;
         int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, items.size());
         List<ConfigManager.ShopItem> pageItems = items.subList(startIndex, endIndex);
 
-        // Track which inner slots are used by specific-slot items
         Set<Integer> usedInnerSlots = new HashSet<>();
         List<ConfigManager.ShopItem> autoPlaceItems = new ArrayList<>();
 
@@ -113,7 +108,6 @@ public class CategoryGUI implements InventoryHolder, Listener {
             }
         }
 
-        // Auto-place remaining items in available inner slots
         int autoIndex = 0;
         for (ConfigManager.ShopItem item : autoPlaceItems) {
             while (autoIndex < INNER_SLOTS.length && usedInnerSlots.contains(INNER_SLOTS[autoIndex])) {
@@ -177,9 +171,15 @@ public class CategoryGUI implements InventoryHolder, Listener {
         Material mat = Material.valueOf(shopItem.getMaterial());
         ItemBuilder builder = new ItemBuilder(mat);
 
-        // Use normal formatting for item name (Title Case from material name)
-        String displayName = formatMaterialName(mat);
-        builder.rawName("<white>" + displayName);
+        // Use custom name from config if set, otherwise format from material
+        String displayName;
+        if (shopItem.getName() != null && !shopItem.getName().isEmpty()) {
+            displayName = shopItem.getName();
+            builder.rawName(displayName);
+        } else {
+            displayName = formatMaterialName(mat);
+            builder.rawName("<white>" + displayName);
+        }
 
         // Build lore from configurable format
         List<String> loreFormat = configManager.getItemLoreFormat();
@@ -188,14 +188,20 @@ public class CategoryGUI implements InventoryHolder, Listener {
             String costStr = shopItem.getBuyPrice() >= 0
                     ? currencySymbol + NumberFormatter.format(shopItem.getBuyPrice())
                     : "<red>Not for sale";
-            String sellStr = shopItem.getSellPrice() >= 0
-                    ? currencySymbol + NumberFormatter.format(shopItem.getSellPrice())
-                    : "<red>Cannot sell";
+            String sellStr;
+            if (shopItem.isCommandItem()) {
+                sellStr = "<red>Cannot sell";
+            } else {
+                sellStr = shopItem.getSellPrice() >= 0
+                        ? currencySymbol + NumberFormatter.format(shopItem.getSellPrice())
+                        : "<red>Cannot sell";
+            }
+            String plainName = shopItem.getName() != null ? stripColors(shopItem.getName()) : formatMaterialName(mat);
             lore.add(line
                     .replace("{cost}", costStr)
                     .replace("{buy}", costStr)
                     .replace("{sell}", sellStr)
-                    .replace("{item}", displayName));
+                    .replace("{item}", plainName));
         }
 
         builder.rawLore(lore);
@@ -265,7 +271,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         ConfigManager.ShopItem shopItem = slotMap.get(slot);
         if (shopItem == null) return;
 
-        EconomyManager economy = ((DonutShop) plugin).getEconomyManager();
+        EconomyManager economy = ((DonutShop) plugin).getEconomyForCategory(cat);
         if (economy == null || !economy.isReady()) {
             player.sendMessage(MiniMessage.miniMessage().deserialize(
                     "<red>Economy is not available!"));
@@ -273,11 +279,9 @@ public class CategoryGUI implements InventoryHolder, Listener {
         }
 
         ClickType clickType = event.getClick();
-        String currencySymbol = configManager.getCurrencySymbol();
-        int shiftAmount = configManager.getShiftClickAmount();
+        String currencySymbol = resolveCurrencySymbol(cat);
 
         if (clickType == ClickType.LEFT || clickType == ClickType.SHIFT_LEFT) {
-            // Open confirmation GUI for buying
             if (shopItem.getBuyPrice() < 0) {
                 playSound(player, configManager.getSoundError());
                 player.sendMessage(MiniMessage.miniMessage().deserialize(
@@ -288,72 +292,27 @@ public class CategoryGUI implements InventoryHolder, Listener {
             playSound(player, configManager.getSoundNavigate());
             confirmGUI.open(player, shopItem, cat, currentPage);
         } else if (clickType == ClickType.RIGHT) {
-            handleSell(player, shopItem, 1, economy, currencySymbol);
-        } else if (clickType == ClickType.SHIFT_RIGHT) {
-            handleSell(player, shopItem, shiftAmount, economy, currencySymbol);
-        } else if (clickType == ClickType.MIDDLE && configManager.isMiddleClickSellAll()) {
-            handleSellAll(player, shopItem, economy, currencySymbol);
-        }
-    }
-
-    private void handleBuy(Player player, ConfigManager.ShopItem shopItem, int amount,
-                           EconomyManager economy, String currencySymbol) {
-        if (shopItem.getBuyPrice() < 0) {
-            playSound(player, configManager.getSoundError());
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>This item cannot be purchased!"));
-            return;
-        }
-
-        double totalCost = shopItem.getBuyPrice() * amount;
-
-        if (!economy.has(player, totalCost)) {
-            playSound(player, configManager.getSoundError());
-            String msg = configManager.getMessage("not-enough-money");
-            if (msg.isEmpty()) msg = "<red>You don't have enough money!";
-            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-            return;
-        }
-
-        Material mat = Material.valueOf(shopItem.getMaterial());
-
-        // Withdraw first, then give items
-        if (!economy.withdraw(player, totalCost)) {
-            playSound(player, configManager.getSoundError());
-            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
-            return;
-        }
-
-        ItemStack itemStack = new ItemStack(mat, amount);
-        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-        if (!leftover.isEmpty()) {
-            // Some items didn't fit — refund for those
-            int notAdded = 0;
-            for (ItemStack left : leftover.values()) {
-                notAdded += left.getAmount();
-            }
-            double refund = shopItem.getBuyPrice() * notAdded;
-            economy.deposit(player, refund);
-            amount -= notAdded;
-            totalCost -= refund;
-
-            if (amount <= 0) {
+            if (shopItem.isCommandItem()) {
                 playSound(player, configManager.getSoundError());
-                String msg = configManager.getMessage("inventory-full");
-                if (msg.isEmpty()) msg = "<red>Your inventory is full!";
-                player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>This item cannot be sold!"));
                 return;
             }
+            handleSell(player, shopItem, 1, economy, currencySymbol);
+        } else if (clickType == ClickType.SHIFT_RIGHT) {
+            if (shopItem.isCommandItem()) {
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>This item cannot be sold!"));
+                return;
+            }
+            handleSell(player, shopItem, configManager.getShiftClickAmount(), economy, currencySymbol);
+        } else if (clickType == ClickType.MIDDLE && configManager.isMiddleClickSellAll()) {
+            if (shopItem.isCommandItem()) {
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>This item cannot be sold!"));
+                return;
+            }
+            handleSellAll(player, shopItem, economy, currencySymbol);
         }
-
-        playSound(player, configManager.getSoundBuy());
-        String materialName = formatMaterialName(mat);
-        String msg = configManager.getMessage("buy-success")
-                .replace("{amount}", String.valueOf(amount))
-                .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 
     private void handleSell(Player player, ConfigManager.ShopItem shopItem, int amount,
@@ -383,7 +342,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         economy.deposit(player, totalEarnings);
 
         playSound(player, configManager.getSoundSell());
-        String materialName = formatMaterialName(mat);
+        String materialName = getItemDisplayName(shopItem);
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(toSell))
                 .replace("{item}", materialName)
@@ -417,7 +376,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         economy.deposit(player, totalEarnings);
 
         playSound(player, configManager.getSoundSell());
-        String materialName = formatMaterialName(mat);
+        String materialName = getItemDisplayName(shopItem);
         String msg = configManager.getMessage("sell-success")
                 .replace("{amount}", String.valueOf(playerHas))
                 .replace("{item}", materialName)
@@ -425,14 +384,32 @@ public class CategoryGUI implements InventoryHolder, Listener {
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 
+    private String resolveCurrencySymbol(ConfigManager.CategoryConfig category) {
+        if (category.hasCurrencyOverride() && category.getCurrencySymbol() != null) {
+            return category.getCurrencySymbol();
+        }
+        return configManager.getCurrencySymbol();
+    }
+
+    private String getItemDisplayName(ConfigManager.ShopItem shopItem) {
+        if (shopItem.getName() != null && !shopItem.getName().isEmpty()) {
+            return stripColors(shopItem.getName());
+        }
+        return formatMaterialName(Material.valueOf(shopItem.getMaterial()));
+    }
+
+    private String stripColors(String text) {
+        if (text == null) return "";
+        return text.replaceAll("&[0-9a-fk-orA-FK-Or]", "")
+                   .replaceAll("<[^>]+>", "");
+    }
+
     private void playSound(Player player, String soundName) {
         if (soundName == null || soundName.isEmpty() || soundName.equalsIgnoreCase("NONE")) return;
         try {
             org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName);
             player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
-        } catch (IllegalArgumentException ignored) {
-            // Invalid sound name in config — silently ignore
-        }
+        } catch (IllegalArgumentException ignored) {}
     }
 
     private int countItems(Player player, Material material) {

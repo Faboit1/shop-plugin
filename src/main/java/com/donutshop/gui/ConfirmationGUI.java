@@ -26,7 +26,6 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
     private static final int GUI_SIZE = 27;
 
-    // Layout slots
     private static final int SLOT_REMOVE_64 = 9;
     private static final int SLOT_REMOVE_10 = 10;
     private static final int SLOT_REMOVE_1 = 11;
@@ -69,8 +68,8 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
     }
 
     private void refreshInventory(Player player, ConfirmationData data) {
-        String materialName = formatMaterialName(Material.valueOf(data.shopItem.getMaterial()));
-        String title = "<white>ʙᴜʏ " + materialName;
+        String itemDisplayName = getItemDisplayName(data.shopItem);
+        String title = "<white>ʙᴜʏ " + itemDisplayName;
 
         Inventory inv = Bukkit.createInventory(this, GUI_SIZE, MiniMessage.miniMessage().deserialize(title));
 
@@ -89,24 +88,26 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         Material itemMat = Material.valueOf(data.shopItem.getMaterial());
         int amount = data.amount;
 
-        // Item display in center
-        inv.setItem(SLOT_ITEM, new ItemBuilder(itemMat)
-                .rawName("<white>" + materialName)
-                .rawLore(List.of("", "<gray>ᴀᴍᴏᴜɴᴛ: <white>" + amount))
-                .amount(Math.min(amount, itemMat.getMaxStackSize()))
-                .build());
+        // Item display in center — use custom name if set
+        ItemBuilder itemBuilder = new ItemBuilder(itemMat);
+        if (data.shopItem.getName() != null && !data.shopItem.getName().isEmpty()) {
+            itemBuilder.rawName(data.shopItem.getName());
+        } else {
+            itemBuilder.rawName("<white>" + itemDisplayName);
+        }
+        itemBuilder.rawLore(List.of("", "<gray>ᴀᴍᴏᴜɴᴛ: <white>" + amount));
+        itemBuilder.amount(Math.min(amount, itemMat.getMaxStackSize()));
+        inv.setItem(SLOT_ITEM, itemBuilder.build());
 
-        // Remove buttons - always visible; clicks clamp to minimum of 1
+        // Remove/Add buttons
         inv.setItem(SLOT_REMOVE_1, buildButton(configManager.getConfirmDecrease1()));
         inv.setItem(SLOT_REMOVE_10, buildButton(configManager.getConfirmDecrease10()));
         inv.setItem(SLOT_REMOVE_64, buildButton(configManager.getConfirmDecrease64()));
-
-        // Add buttons - always visible; clicks clamp to maximum of 64
         inv.setItem(SLOT_ADD_1, buildButton(configManager.getConfirmIncrease1()));
         inv.setItem(SLOT_ADD_10, buildButton(configManager.getConfirmIncrease10()));
         inv.setItem(SLOT_ADD_64, buildButton(configManager.getConfirmIncrease64()));
 
-        // Back button (uses category-gui.navigation.back config)
+        // Back button
         ConfigManager.NavigationConfig navBack = configManager.getNavBack();
         ItemBuilder backBuilder = new ItemBuilder(parseMaterial(navBack.getMaterial(), Material.TIPPED_ARROW))
                 .rawName(navBack.getName());
@@ -117,8 +118,8 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         }
         inv.setItem(SLOT_BACK, backBuilder.build());
 
-        // Cost info
-        String currencySymbol = configManager.getCurrencySymbol();
+        // Cost info — use per-category currency symbol
+        String currencySymbol = resolveCurrencySymbol(data.returnCategory);
         double totalCost = data.shopItem.getBuyPrice() * amount;
         ConfigManager.ButtonConfig costInfoBtn = configManager.getConfirmCostInfo();
         inv.setItem(SLOT_COST_INFO, new ItemBuilder(parseMaterial(costInfoBtn.getMaterial(), Material.PAPER))
@@ -131,7 +132,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         ConfigManager.ButtonConfig confirmBtn = configManager.getConfirmConfirmBtn();
         inv.setItem(SLOT_CONFIRM, new ItemBuilder(parseMaterial(confirmBtn.getMaterial(), Material.LIME_STAINED_GLASS_PANE))
                 .rawName(confirmBtn.getName())
-                .rawLore(List.of("", "<gray>ᴄʟɪᴄᴋ ᴛᴏ ʙᴜʏ <white>" + amount + "x " + materialName))
+                .rawLore(List.of("", "<gray>ᴄʟɪᴄᴋ ᴛᴏ ʙᴜʏ <white>" + amount + "x " + itemDisplayName))
                 .build());
 
         player.openInventory(inv);
@@ -197,7 +198,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
     }
 
     private void handleConfirmPurchase(Player player, ConfirmationData data) {
-        EconomyManager economy = ((DonutShop) plugin).getEconomyManager();
+        EconomyManager economy = ((DonutShop) plugin).getEconomyForCategory(data.returnCategory);
         if (economy == null || !economy.isReady()) {
             player.sendMessage(MiniMessage.miniMessage().deserialize(
                     "<red>Economy is not available!"));
@@ -206,7 +207,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
         ConfigManager.ShopItem shopItem = data.shopItem;
         int amount = data.amount;
-        String currencySymbol = configManager.getCurrencySymbol();
+        String currencySymbol = resolveCurrencySymbol(data.returnCategory);
 
         if (shopItem.getBuyPrice() < 0) {
             playSound(player, configManager.getSoundError());
@@ -225,46 +226,92 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
             return;
         }
 
-        Material mat = Material.valueOf(shopItem.getMaterial());
+        if (!shopItem.isCommandItem()) {
+            // Material item purchase
+            Material mat = Material.valueOf(shopItem.getMaterial());
 
-        if (!economy.withdraw(player, totalCost)) {
-            playSound(player, configManager.getSoundError());
-            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
-            return;
-        }
-
-        ItemStack itemStack = new ItemStack(mat, amount);
-        java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-        if (!leftover.isEmpty()) {
-            int notAdded = 0;
-            for (ItemStack left : leftover.values()) {
-                notAdded += left.getAmount();
-            }
-            double refund = shopItem.getBuyPrice() * notAdded;
-            economy.deposit(player, refund);
-            amount -= notAdded;
-            totalCost -= refund;
-
-            if (amount <= 0) {
+            if (!economy.withdraw(player, totalCost)) {
                 playSound(player, configManager.getSoundError());
-                String msg = configManager.getMessage("inventory-full");
-                if (msg.isEmpty()) msg = "<red>Your inventory is full!";
-                player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
                 return;
             }
+
+            ItemStack itemStack = new ItemStack(mat, amount);
+            java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
+
+            if (!leftover.isEmpty()) {
+                int notAdded = 0;
+                for (ItemStack left : leftover.values()) {
+                    notAdded += left.getAmount();
+                }
+                double refund = shopItem.getBuyPrice() * notAdded;
+                economy.deposit(player, refund);
+                amount -= notAdded;
+                totalCost -= refund;
+
+                if (amount <= 0) {
+                    playSound(player, configManager.getSoundError());
+                    String msg = configManager.getMessage("inventory-full");
+                    if (msg.isEmpty()) msg = "<red>Your inventory is full!";
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+                    return;
+                }
+            }
+
+            playSound(player, configManager.getSoundBuy());
+            String itemName = getItemDisplayName(shopItem);
+            String msg = configManager.getMessage("buy-success")
+                    .replace("{amount}", String.valueOf(amount))
+                    .replace("{item}", itemName)
+                    .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+        } else {
+            // Command item purchase
+            if (!economy.withdraw(player, totalCost)) {
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed!"));
+                return;
+            }
+
+            for (int i = 0; i < amount; i++) {
+                for (String cmd : shopItem.getCommands()) {
+                    String processed = cmd
+                            .replace("{player}", player.getName())
+                            .replace("%player%", player.getName());
+                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed);
+                }
+            }
+
+            playSound(player, configManager.getSoundBuy());
+            String itemName = getItemDisplayName(shopItem);
+            String msg = configManager.getMessage("buy-success")
+                    .replace("{amount}", String.valueOf(amount))
+                    .replace("{item}", itemName)
+                    .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
         }
 
-        playSound(player, configManager.getSoundBuy());
-        String materialName = formatMaterialName(mat);
-        String msg = configManager.getMessage("buy-success")
-                .replace("{amount}", String.valueOf(amount))
-                .replace("{item}", materialName)
-                .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
-
-        // Stay open - refresh the confirmation GUI (don't close)
         refreshInventory(player, data);
+    }
+
+    private String resolveCurrencySymbol(ConfigManager.CategoryConfig category) {
+        if (category != null && category.hasCurrencyOverride() && category.getCurrencySymbol() != null) {
+            return category.getCurrencySymbol();
+        }
+        return configManager.getCurrencySymbol();
+    }
+
+    private String getItemDisplayName(ConfigManager.ShopItem shopItem) {
+        if (shopItem.getName() != null && !shopItem.getName().isEmpty()) {
+            return stripColors(shopItem.getName());
+        }
+        return formatMaterialName(Material.valueOf(shopItem.getMaterial()));
+    }
+
+    private String stripColors(String text) {
+        if (text == null) return "";
+        return text.replaceAll("&[0-9a-fk-orA-FK-Or]", "")
+                   .replaceAll("<[^>]+>", "");
     }
 
     private void playSound(Player player, String soundName) {
