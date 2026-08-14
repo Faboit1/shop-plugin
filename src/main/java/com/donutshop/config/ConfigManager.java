@@ -17,6 +17,7 @@ public class ConfigManager {
 
     private String economyProvider;
     private String coinsEngineCurrency;
+    private String excellentEconomyCurrency;
     private String currencySymbol;
     private boolean useSmallCaps;
 
@@ -104,6 +105,7 @@ public class ConfigManager {
     private void loadSettings(FileConfiguration config) {
         economyProvider = config.getString("settings.economy-provider", "auto");
         coinsEngineCurrency = config.getString("settings.coinsengine-currency", "coins");
+        excellentEconomyCurrency = config.getString("settings.excellenteconomy-currency", "money");
         currencySymbol = config.getString("settings.currency-symbol", "$");
         useSmallCaps = config.getBoolean("settings.use-small-caps", true);
 
@@ -292,6 +294,14 @@ public class ConfigManager {
                 cat.fillerMaterial = catSection.getString("filler.material", defaultFillerMaterial);
                 cat.fillerName = catSection.getString("filler.name", defaultFillerName);
 
+                // Per-category currency override
+                ConfigurationSection currSec = catSection.getConfigurationSection("currency");
+                if (currSec != null) {
+                    cat.currencyProvider = currSec.getString("provider", null);
+                    cat.currencyId = currSec.getString("id", null);
+                    cat.currencySymbol = currSec.getString("symbol", null);
+                }
+
                 cat.items = loadItems(catSection);
             } else {
                 cat.guiTitle = id;
@@ -329,6 +339,15 @@ public class ConfigManager {
             item.amount = map.containsKey("amount") ? ((Number) map.get("amount")).intValue() : 1;
             item.customModelData = map.containsKey("custom-model-data") ? ((Number) map.get("custom-model-data")).intValue() : -1;
 
+            item.type = String.valueOf(map.getOrDefault("type", "ITEM")).toUpperCase();
+            if (map.containsKey("commands") && map.get("commands") instanceof List) {
+                item.commands = ((List<?>) map.get("commands")).stream()
+                        .map(String::valueOf).collect(java.util.stream.Collectors.toList());
+            } else if (map.containsKey("command")) {
+                String cmd = String.valueOf(map.get("command"));
+                item.commands = cmd.isEmpty() ? Collections.emptyList() : Collections.singletonList(cmd);
+            }
+
             items.add(item);
         }
         return items;
@@ -342,6 +361,10 @@ public class ConfigManager {
 
     public String getCoinsEngineCurrency() {
         return coinsEngineCurrency;
+    }
+
+    public String getExcellentEconomyCurrency() {
+        return excellentEconomyCurrency;
     }
 
     public String getCurrencySymbol() {
@@ -466,6 +489,9 @@ public class ConfigManager {
         private String fillerName;
         private boolean fillerEnabled;
         private List<ShopItem> items;
+        private String currencyProvider;
+        private String currencyId;
+        private String currencySymbol;
 
         public String getId() { return id; }
         public int getSlot() { return slot; }
@@ -480,6 +506,10 @@ public class ConfigManager {
         public String getFillerName() { return fillerName; }
         public boolean isFillerEnabled() { return fillerEnabled; }
         public List<ShopItem> getItems() { return items; }
+        public String getCurrencyProvider() { return currencyProvider; }
+        public String getCurrencyId() { return currencyId; }
+        public String getCurrencySymbol() { return currencySymbol; }
+        public boolean hasCurrencyOverride() { return currencyProvider != null && !currencyProvider.isEmpty(); }
     }
 
     public static class ShopItem {
@@ -491,6 +521,8 @@ public class ConfigManager {
         private int slot = -1;
         private int amount = 1;
         private int customModelData = -1;
+        private String type = "ITEM";
+        private List<String> commands = Collections.emptyList();
 
         public String getMaterial() { return material; }
         public String getName() { return name; }
@@ -500,6 +532,9 @@ public class ConfigManager {
         public int getSlot() { return slot; }
         public int getAmount() { return amount; }
         public int getCustomModelData() { return customModelData; }
+        public String getType() { return type; }
+        public List<String> getCommands() { return commands; }
+        public boolean isCommandItem() { return "COMMAND".equalsIgnoreCase(type); }
     }
 
     public static class ButtonConfig {
