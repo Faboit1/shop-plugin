@@ -52,7 +52,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         UUID uuid = player.getUniqueId();
 
         ConfirmationData data = playerData.get(uuid);
-        if (data == null || !data.shopItem.getMaterial().equals(shopItem.getMaterial())) {
+        if (data == null || !isSameItem(data.shopItem, shopItem)) {
             data = new ConfirmationData();
             data.shopItem = shopItem;
             data.returnCategory = returnCategory;
@@ -65,6 +65,15 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
         playerData.put(uuid, data);
 
         refreshInventory(player, data);
+    }
+
+    private boolean isSameItem(ConfigManager.ShopItem a, ConfigManager.ShopItem b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        if (!Objects.equals(a.getMaterial(), b.getMaterial())) return false;
+        if (!Objects.equals(a.getName(), b.getName())) return false;
+        if (Double.compare(a.getBuyPrice(), b.getBuyPrice()) != 0) return false;
+        return Objects.equals(a.getType(), b.getType());
     }
 
     private void refreshInventory(Player player, ConfirmationData data) {
@@ -273,13 +282,23 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
-            for (int i = 0; i < amount; i++) {
-                for (String cmd : shopItem.getCommands()) {
-                    String processed = cmd
-                            .replace("{player}", player.getName())
-                            .replace("%player%", player.getName());
-                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed);
+            try {
+                for (int i = 0; i < amount; i++) {
+                    for (String cmd : shopItem.getCommands()) {
+                        String processed = cmd
+                                .replace("{player}", player.getName())
+                                .replace("%player%", player.getName());
+                        Bukkit.getGlobalRegionScheduler().run(plugin, task ->
+                                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed));
+                    }
                 }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to dispatch command for shop item: " + e.getMessage());
+                economy.deposit(player, totalCost);
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Purchase failed! You have been refunded."));
+                refreshInventory(player, data);
+                return;
             }
 
             playSound(player, configManager.getSoundBuy());

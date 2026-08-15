@@ -296,7 +296,7 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
 
             manager.addPurchaseCount(player.getUniqueId(), item.getId(), given);
             playSound(player, configManager.getSoundBuy());
-            String itemName = mat.name().replace('_', ' ').toLowerCase();
+            String itemName = stripColors(item.getName());
             String msg = configManager.getMessage("buy-success")
                     .replace("{amount}", String.valueOf(given))
                     .replace("{item}", itemName)
@@ -311,14 +311,24 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
-            for (int i = 0; i < amount; i++) {
-                for (String cmd : item.getCommands()) {
-                    String processed = cmd
-                            .replace("{player}", player.getName())
-                            .replace("%player%", player.getName());
-                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed);
+            try {
+                for (int i = 0; i < amount; i++) {
+                    for (String cmd : item.getCommands()) {
+                        String processed = cmd
+                                .replace("{player}", player.getName())
+                                .replace("%player%", player.getName());
+                        Bukkit.getGlobalRegionScheduler().run(plugin, task ->
+                                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed));
+                    }
                 }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to dispatch command for hourly item: " + e.getMessage());
+                if (totalCost > 0) economy.deposit(player, totalCost);
+                playSound(player, configManager.getSoundError());
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Purchase failed! You have been refunded."));
+                return;
             }
+
             manager.addPurchaseCount(player.getUniqueId(), item.getId(), amount);
             playSound(player, configManager.getSoundBuy());
             String itemName = stripColors(item.getName());
