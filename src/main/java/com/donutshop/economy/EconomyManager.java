@@ -2,6 +2,7 @@ package com.donutshop.economy;
 
 import com.donutshop.util.NumberFormatter;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -95,13 +96,22 @@ public class EconomyManager {
             Class<?> apiClass = Class.forName("su.nightexpress.coinsengine.api.CoinsEngineAPI");
             Class<?> currencyInterface = findInterface(coinsEngineCurrency.getClass(), "Currency");
 
-            getBalanceMethod = apiClass.getMethod("getBalance", Player.class, currencyInterface);
-            try {
-                addBalanceMethod = apiClass.getMethod("addBalance", Player.class, currencyInterface, double.class);
-                removeBalanceMethod = apiClass.getMethod("removeBalance", Player.class, currencyInterface, double.class);
-            } catch (NoSuchMethodException e) {
-                addBalanceMethod = apiClass.getMethod("give", Player.class, currencyInterface, double.class);
-                removeBalanceMethod = apiClass.getMethod("take", Player.class, currencyInterface, double.class);
+            getBalanceMethod = findPlayerMethod(apiClass, "getBalance", currencyInterface);
+            if (getBalanceMethod == null) {
+                plugin.getLogger().warning("CoinsEngine getBalance method not found!");
+                return false;
+            }
+
+            addBalanceMethod = findPlayerDoubleMethod(apiClass, "addBalance", currencyInterface);
+            removeBalanceMethod = findPlayerDoubleMethod(apiClass, "removeBalance", currencyInterface);
+            if (addBalanceMethod == null || removeBalanceMethod == null) {
+                addBalanceMethod = findPlayerDoubleMethod(apiClass, "give", currencyInterface);
+                removeBalanceMethod = findPlayerDoubleMethod(apiClass, "take", currencyInterface);
+            }
+
+            if (addBalanceMethod == null || removeBalanceMethod == null) {
+                plugin.getLogger().warning("CoinsEngine give/take methods not found!");
+                return false;
             }
 
             useCoinsEngine = true;
@@ -130,42 +140,78 @@ public class EconomyManager {
 
             Class<?> currencyInterface = findInterface(eeCurrency.getClass(), "Currency");
 
-            eeGetBalanceMethod = findMethodByName(currencyInterface, "getBalance", Player.class);
+            // Strategy 1: Instance methods on the currency interface (getBalance(Player), give(Player, double), etc.)
+            eeGetBalanceMethod = findPlayerMethod(currencyInterface, "getBalance");
             if (eeGetBalanceMethod == null) {
-                eeGetBalanceMethod = findMethodByName(eeCurrency.getClass(), "getBalance", Player.class);
+                eeGetBalanceMethod = findPlayerMethod(eeCurrency.getClass(), "getBalance");
             }
 
-            try {
-                eeAddBalanceMethod = findMethodByName(currencyInterface, "give", Player.class, double.class);
-                eeRemoveBalanceMethod = findMethodByName(currencyInterface, "take", Player.class, double.class);
-            } catch (Exception ignored) {}
+            eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "give");
+            if (eeAddBalanceMethod == null) {
+                eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "addBalance");
+            }
+            eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "take");
+            if (eeRemoveBalanceMethod == null) {
+                eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "removeBalance");
+            }
 
             if (eeAddBalanceMethod == null) {
-                eeAddBalanceMethod = findMethodByName(eeCurrency.getClass(), "give", Player.class, double.class);
+                eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "give");
+                if (eeAddBalanceMethod == null)
+                    eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "addBalance");
             }
             if (eeRemoveBalanceMethod == null) {
-                eeRemoveBalanceMethod = findMethodByName(eeCurrency.getClass(), "take", Player.class, double.class);
+                eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "take");
+                if (eeRemoveBalanceMethod == null)
+                    eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "removeBalance");
             }
 
+            // Strategy 2: Static API class (same as CoinsEngine — NightExpress shared API style)
             if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
-                // Try static API class pattern (same as CoinsEngine - NightExpress shared API style)
                 try {
                     Class<?> apiClass = Class.forName("su.nightexpress.excellenteconomy.api.ExcellentEconomyAPI");
-                    eeGetBalanceMethod = apiClass.getMethod("getBalance", Player.class, currencyInterface);
-                    try {
-                        eeAddBalanceMethod = apiClass.getMethod("addBalance", Player.class, currencyInterface, double.class);
-                        eeRemoveBalanceMethod = apiClass.getMethod("removeBalance", Player.class, currencyInterface, double.class);
-                    } catch (NoSuchMethodException e2) {
-                        eeAddBalanceMethod = apiClass.getMethod("give", Player.class, currencyInterface, double.class);
-                        eeRemoveBalanceMethod = apiClass.getMethod("take", Player.class, currencyInterface, double.class);
+
+                    if (eeGetBalanceMethod == null)
+                        eeGetBalanceMethod = findPlayerMethod(apiClass, "getBalance", currencyInterface);
+
+                    if (eeAddBalanceMethod == null) {
+                        eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "addBalance", currencyInterface);
+                        if (eeAddBalanceMethod == null)
+                            eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "give", currencyInterface);
                     }
-                } catch (Exception ignored) {}
+                    if (eeRemoveBalanceMethod == null) {
+                        eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "removeBalance", currencyInterface);
+                        if (eeRemoveBalanceMethod == null)
+                            eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "take", currencyInterface);
+                    }
+                } catch (ClassNotFoundException ignored) {}
+            }
+
+            // Strategy 3: Fuzzy search — scan all methods by name across the currency object
+            if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
+                for (Method m : eeCurrency.getClass().getMethods()) {
+                    if (eeGetBalanceMethod == null && m.getName().equals("getBalance") && m.getParameterCount() == 1
+                            && isPlayerParam(m.getParameterTypes()[0])) {
+                        eeGetBalanceMethod = m;
+                    }
+                    if (eeAddBalanceMethod == null && (m.getName().equals("give") || m.getName().equals("addBalance"))
+                            && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
+                        eeAddBalanceMethod = m;
+                    }
+                    if (eeRemoveBalanceMethod == null && (m.getName().equals("take") || m.getName().equals("removeBalance"))
+                            && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
+                        eeRemoveBalanceMethod = m;
+                    }
+                }
             }
 
             if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
                 plugin.getLogger().warning("ExcellentEconomy API methods not found for currency '" + eeCurrencyName + "'!");
                 return false;
             }
+
+            plugin.getLogger().info("ExcellentEconomy hooked: getBalance=" + eeGetBalanceMethod
+                    + ", give=" + eeAddBalanceMethod + ", take=" + eeRemoveBalanceMethod);
 
             useExcellentEconomy = true;
             return true;
@@ -186,12 +232,48 @@ public class EconomyManager {
         return clazz;
     }
 
-    private Method findMethodByName(Class<?> clazz, String name, Class<?>... paramTypes) {
+    private boolean isPlayerParam(Class<?> paramType) {
+        return paramType.isAssignableFrom(Player.class);
+    }
+
+    private Method findPlayerMethod(Class<?> clazz, String name) {
         try {
-            return clazz.getMethod(name, paramTypes);
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
+            return clazz.getMethod(name, Player.class);
+        } catch (NoSuchMethodException ignored) {}
+        try {
+            return clazz.getMethod(name, OfflinePlayer.class);
+        } catch (NoSuchMethodException ignored) {}
+        return null;
+    }
+
+    private Method findPlayerMethod(Class<?> clazz, String name, Class<?> extraParam) {
+        try {
+            return clazz.getMethod(name, Player.class, extraParam);
+        } catch (NoSuchMethodException ignored) {}
+        try {
+            return clazz.getMethod(name, OfflinePlayer.class, extraParam);
+        } catch (NoSuchMethodException ignored) {}
+        return null;
+    }
+
+    private Method findPlayerDoubleMethod(Class<?> clazz, String name) {
+        try {
+            return clazz.getMethod(name, Player.class, double.class);
+        } catch (NoSuchMethodException ignored) {}
+        try {
+            return clazz.getMethod(name, OfflinePlayer.class, double.class);
+        } catch (NoSuchMethodException ignored) {}
+        return null;
+    }
+
+    private Method findPlayerDoubleMethod(Class<?> clazz, String name, Class<?> extraParam) {
+        try {
+            return clazz.getMethod(name, Player.class, extraParam, double.class);
+        } catch (NoSuchMethodException ignored) {}
+        try {
+            return clazz.getMethod(name, OfflinePlayer.class, extraParam, double.class);
+        } catch (NoSuchMethodException ignored) {}
+        return null;
     }
 
     public double getBalance(Player player) {
