@@ -104,11 +104,17 @@ public class DonutShop extends JavaPlugin {
                 String provider = cat.getCurrencyProvider();
                 String currencyId = cat.getCurrencyId();
                 EconomyManager catEcon = new EconomyManager(this, provider, currencyId, currencyId);
-                if (catEcon.isReady()) {
+                if (catEcon.isReady() && catEcon.getProviderName().equalsIgnoreCase(provider)) {
                     categoryEconomies.put(entry.getKey(), catEcon);
-                    getLogger().info("Category '" + entry.getKey() + "' using " + provider + " with currency '" + currencyId + "'");
+                    getLogger().info("Category '" + entry.getKey() + "' using " + catEcon.getProviderName() + " with currency '" + currencyId + "'");
+                } else if (catEcon.isReady()) {
+                    getLogger().severe("Category '" + entry.getKey() + "' requested economy '" + provider
+                            + "' but only '" + catEcon.getProviderName() + "' is available. "
+                            + "Refusing to use wrong provider to prevent incorrect currency charges.");
                 } else {
-                    getLogger().warning("Category '" + entry.getKey() + "' economy provider '" + provider + "' not available, falling back to default.");
+                    getLogger().severe("Category '" + entry.getKey() + "' economy provider '" + provider
+                            + "' with currency '" + currencyId + "' not available. "
+                            + "Purchases in this category will be disabled until the economy is configured correctly.");
                 }
             }
         }
@@ -120,6 +126,7 @@ public class DonutShop extends JavaPlugin {
             if (catEcon != null && catEcon.isReady()) {
                 return catEcon;
             }
+            return null;
         }
         return economyManager;
     }

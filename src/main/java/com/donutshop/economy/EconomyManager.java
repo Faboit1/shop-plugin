@@ -27,6 +27,7 @@ public class EconomyManager {
     private Method eeAddBalanceMethod;
     private Method eeRemoveBalanceMethod;
     private String eeCurrencyName;
+    private Object eeApiObject;
 
     private String provider = "none";
 
@@ -123,102 +124,135 @@ public class EconomyManager {
     }
 
     private boolean setupExcellentEconomy() {
-        try {
-            Plugin eePlugin = Bukkit.getPluginManager().getPlugin("ExcellentEconomy");
-            if (eePlugin == null) return false;
+        Plugin eePlugin = Bukkit.getPluginManager().getPlugin("ExcellentEconomy");
+        if (eePlugin == null) return false;
 
+        // Strategy 1: Original API — getCurrencyManager() on plugin class
+        try {
             Method getCurrencyManagerMethod = eePlugin.getClass().getMethod("getCurrencyManager");
             Object currencyManager = getCurrencyManagerMethod.invoke(eePlugin);
 
             Method getCurrencyMethod = currencyManager.getClass().getMethod("getCurrency", String.class);
             eeCurrency = getCurrencyMethod.invoke(currencyManager, eeCurrencyName);
 
-            if (eeCurrency == null) {
-                plugin.getLogger().warning("ExcellentEconomy currency '" + eeCurrencyName + "' not found!");
-                return false;
-            }
+            if (eeCurrency != null) {
+                Class<?> currencyInterface = findInterface(eeCurrency.getClass(), "Currency");
 
-            Class<?> currencyInterface = findInterface(eeCurrency.getClass(), "Currency");
+                eeGetBalanceMethod = findPlayerMethod(currencyInterface, "getBalance");
+                if (eeGetBalanceMethod == null) {
+                    eeGetBalanceMethod = findPlayerMethod(eeCurrency.getClass(), "getBalance");
+                }
 
-            // Strategy 1: Instance methods on the currency interface (getBalance(Player), give(Player, double), etc.)
-            eeGetBalanceMethod = findPlayerMethod(currencyInterface, "getBalance");
-            if (eeGetBalanceMethod == null) {
-                eeGetBalanceMethod = findPlayerMethod(eeCurrency.getClass(), "getBalance");
-            }
+                eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "give");
+                if (eeAddBalanceMethod == null) {
+                    eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "addBalance");
+                }
+                eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "take");
+                if (eeRemoveBalanceMethod == null) {
+                    eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "removeBalance");
+                }
 
-            eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "give");
-            if (eeAddBalanceMethod == null) {
-                eeAddBalanceMethod = findPlayerDoubleMethod(currencyInterface, "addBalance");
-            }
-            eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "take");
-            if (eeRemoveBalanceMethod == null) {
-                eeRemoveBalanceMethod = findPlayerDoubleMethod(currencyInterface, "removeBalance");
-            }
+                if (eeAddBalanceMethod == null) {
+                    eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "give");
+                    if (eeAddBalanceMethod == null)
+                        eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "addBalance");
+                }
+                if (eeRemoveBalanceMethod == null) {
+                    eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "take");
+                    if (eeRemoveBalanceMethod == null)
+                        eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "removeBalance");
+                }
 
-            if (eeAddBalanceMethod == null) {
-                eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "give");
-                if (eeAddBalanceMethod == null)
-                    eeAddBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "addBalance");
-            }
-            if (eeRemoveBalanceMethod == null) {
-                eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "take");
-                if (eeRemoveBalanceMethod == null)
-                    eeRemoveBalanceMethod = findPlayerDoubleMethod(eeCurrency.getClass(), "removeBalance");
-            }
+                if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
+                    try {
+                        Class<?> apiClass = Class.forName("su.nightexpress.excellenteconomy.api.ExcellentEconomyAPI");
 
-            // Strategy 2: Static API class (same as CoinsEngine — NightExpress shared API style)
-            if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
-                try {
-                    Class<?> apiClass = Class.forName("su.nightexpress.excellenteconomy.api.ExcellentEconomyAPI");
+                        if (eeGetBalanceMethod == null)
+                            eeGetBalanceMethod = findPlayerMethod(apiClass, "getBalance", currencyInterface);
 
-                    if (eeGetBalanceMethod == null)
-                        eeGetBalanceMethod = findPlayerMethod(apiClass, "getBalance", currencyInterface);
+                        if (eeAddBalanceMethod == null) {
+                            eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "addBalance", currencyInterface);
+                            if (eeAddBalanceMethod == null)
+                                eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "give", currencyInterface);
+                        }
+                        if (eeRemoveBalanceMethod == null) {
+                            eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "removeBalance", currencyInterface);
+                            if (eeRemoveBalanceMethod == null)
+                                eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "take", currencyInterface);
+                        }
+                    } catch (ClassNotFoundException ignored) {}
+                }
 
-                    if (eeAddBalanceMethod == null) {
-                        eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "addBalance", currencyInterface);
-                        if (eeAddBalanceMethod == null)
-                            eeAddBalanceMethod = findPlayerDoubleMethod(apiClass, "give", currencyInterface);
-                    }
-                    if (eeRemoveBalanceMethod == null) {
-                        eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "removeBalance", currencyInterface);
-                        if (eeRemoveBalanceMethod == null)
-                            eeRemoveBalanceMethod = findPlayerDoubleMethod(apiClass, "take", currencyInterface);
-                    }
-                } catch (ClassNotFoundException ignored) {}
-            }
-
-            // Strategy 3: Fuzzy search — scan all methods by name across the currency object
-            if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
-                for (Method m : eeCurrency.getClass().getMethods()) {
-                    if (eeGetBalanceMethod == null && m.getName().equals("getBalance") && m.getParameterCount() == 1
-                            && isPlayerParam(m.getParameterTypes()[0])) {
-                        eeGetBalanceMethod = m;
-                    }
-                    if (eeAddBalanceMethod == null && (m.getName().equals("give") || m.getName().equals("addBalance"))
-                            && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
-                        eeAddBalanceMethod = m;
-                    }
-                    if (eeRemoveBalanceMethod == null && (m.getName().equals("take") || m.getName().equals("removeBalance"))
-                            && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
-                        eeRemoveBalanceMethod = m;
+                if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
+                    for (Method m : eeCurrency.getClass().getMethods()) {
+                        if (eeGetBalanceMethod == null && m.getName().equals("getBalance") && m.getParameterCount() == 1
+                                && isPlayerParam(m.getParameterTypes()[0])) {
+                            eeGetBalanceMethod = m;
+                        }
+                        if (eeAddBalanceMethod == null && (m.getName().equals("give") || m.getName().equals("addBalance"))
+                                && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
+                            eeAddBalanceMethod = m;
+                        }
+                        if (eeRemoveBalanceMethod == null && (m.getName().equals("take") || m.getName().equals("removeBalance"))
+                                && m.getParameterCount() == 2 && isPlayerParam(m.getParameterTypes()[0])) {
+                            eeRemoveBalanceMethod = m;
+                        }
                     }
                 }
+
+                if (eeGetBalanceMethod != null && eeAddBalanceMethod != null && eeRemoveBalanceMethod != null) {
+                    plugin.getLogger().info("ExcellentEconomy hooked: getBalance=" + eeGetBalanceMethod
+                            + ", give=" + eeAddBalanceMethod + ", take=" + eeRemoveBalanceMethod);
+                    useExcellentEconomy = true;
+                    return true;
+                }
             }
-
-            if (eeGetBalanceMethod == null || eeAddBalanceMethod == null || eeRemoveBalanceMethod == null) {
-                plugin.getLogger().warning("ExcellentEconomy API methods not found for currency '" + eeCurrencyName + "'!");
-                return false;
-            }
-
-            plugin.getLogger().info("ExcellentEconomy hooked: getBalance=" + eeGetBalanceMethod
-                    + ", give=" + eeAddBalanceMethod + ", take=" + eeRemoveBalanceMethod);
-
-            useExcellentEconomy = true;
-            return true;
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to hook into ExcellentEconomy: " + e.getMessage());
-            return false;
+            plugin.getLogger().info("ExcellentEconomy original API not available (" + e.getMessage() + "), trying Folia fork API...");
         }
+
+        // Strategy 2: Folia fork API — getAPI() on plugin or ServicesManager
+        try {
+            Object api = null;
+            try {
+                Method getApiMethod = eePlugin.getClass().getMethod("getAPI");
+                api = getApiMethod.invoke(eePlugin);
+            } catch (Exception ignored) {}
+
+            if (api == null) {
+                try {
+                    Class<?> apiInterface = Class.forName("su.nightexpress.excellenteconomy.api.ExcellentEconomyAPI");
+                    RegisteredServiceProvider<?> rsp = Bukkit.getServicesManager().getRegistration(apiInterface);
+                    if (rsp != null) {
+                        api = rsp.getProvider();
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (api != null) {
+                Class<?> apiClass = api.getClass();
+
+                Method getBal = findPlayerMethod(apiClass, "getBalance", String.class);
+                Method dep = findPlayerDoubleMethod(apiClass, "deposit", String.class);
+                Method wit = findPlayerDoubleMethod(apiClass, "withdraw", String.class);
+
+                if (getBal != null && dep != null && wit != null) {
+                    eeApiObject = api;
+                    eeGetBalanceMethod = getBal;
+                    eeAddBalanceMethod = dep;
+                    eeRemoveBalanceMethod = wit;
+                    useExcellentEconomy = true;
+                    plugin.getLogger().info("ExcellentEconomy (Folia) hooked via API: getBalance=" + getBal
+                            + ", deposit=" + dep + ", withdraw=" + wit);
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to hook into ExcellentEconomy Folia API: " + e.getMessage());
+        }
+
+        plugin.getLogger().warning("Failed to hook into ExcellentEconomy: no compatible API found for currency '" + eeCurrencyName + "'");
+        return false;
     }
 
     private Class<?> findInterface(Class<?> clazz, String simpleName) {
@@ -291,7 +325,9 @@ public class EconomyManager {
         if (provider.equals("excellenteconomy") && useExcellentEconomy) {
             try {
                 Object result;
-                if (eeGetBalanceMethod.getParameterCount() == 2) {
+                if (eeApiObject != null) {
+                    result = eeGetBalanceMethod.invoke(eeApiObject, player, eeCurrencyName);
+                } else if (eeGetBalanceMethod.getParameterCount() == 2) {
                     result = eeGetBalanceMethod.invoke(null, player, eeCurrency);
                 } else {
                     result = eeGetBalanceMethod.invoke(eeCurrency, player);
@@ -318,7 +354,10 @@ public class EconomyManager {
         }
         if (provider.equals("excellenteconomy") && useExcellentEconomy) {
             try {
-                if (eeRemoveBalanceMethod.getParameterCount() == 3
+                if (eeApiObject != null) {
+                    Object result = eeRemoveBalanceMethod.invoke(eeApiObject, player, eeCurrencyName, amount);
+                    return !(result instanceof Boolean) || (Boolean) result;
+                } else if (eeRemoveBalanceMethod.getParameterCount() == 3
                         && eeRemoveBalanceMethod.getDeclaringClass().getSimpleName().contains("API")) {
                     eeRemoveBalanceMethod.invoke(null, player, eeCurrency, amount);
                 } else {
@@ -346,7 +385,10 @@ public class EconomyManager {
         }
         if (provider.equals("excellenteconomy") && useExcellentEconomy) {
             try {
-                if (eeAddBalanceMethod.getParameterCount() == 3
+                if (eeApiObject != null) {
+                    Object result = eeAddBalanceMethod.invoke(eeApiObject, player, eeCurrencyName, amount);
+                    return !(result instanceof Boolean) || (Boolean) result;
+                } else if (eeAddBalanceMethod.getParameterCount() == 3
                         && eeAddBalanceMethod.getDeclaringClass().getSimpleName().contains("API")) {
                     eeAddBalanceMethod.invoke(null, player, eeCurrency, amount);
                 } else {
