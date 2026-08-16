@@ -288,8 +288,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                         String processed = cmd
                                 .replace("{player}", player.getName())
                                 .replace("%player%", player.getName());
-                        Bukkit.getGlobalRegionScheduler().run(plugin, task ->
-                                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processed));
+                        Bukkit.getCommandMap().dispatch(plugin.getServer().getConsoleSender(), processed);
                     }
                 }
             } catch (Exception e) {
