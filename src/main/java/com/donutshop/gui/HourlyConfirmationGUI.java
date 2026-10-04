@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -166,6 +167,11 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
     // ── Click handling ─────────────────────────────────────────
 
     @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof HourlyConfirmationGUI) event.setCancelled(true);
+    }
+
+    @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!(event.getInventory().getHolder() instanceof HourlyConfirmationGUI)) return;
         event.setCancelled(true);
@@ -232,6 +238,15 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
 
         HourlyItemManager manager = plugin.getHourlyItemManager();
         HourlyItem item = data.hourlyItem;
+
+        // The GUI may have stayed open across a rotation or reload, which also resets purchase counts.
+        if (!manager.isOnOffer(item)) {
+            playSound(player, configManager.getSoundError());
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>This item is no longer available!"));
+            playerData.remove(player.getUniqueId());
+            plugin.getHourlyShopGUI().open(player);
+            return;
+        }
 
         // Re-check the remaining purchase allowance and clamp the requested amount
         int max = maxAmount(player, item);
@@ -311,8 +326,9 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
+            int completed = 0;
             try {
-                for (int i = 0; i < amount; i++) {
+                for (; completed < amount; completed++) {
                     for (String cmd : item.getCommands()) {
                         String processed = cmd
                                 .replace("{player}", player.getName())
@@ -322,9 +338,15 @@ public class HourlyConfirmationGUI implements InventoryHolder, Listener {
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to dispatch command for hourly item: " + e.getMessage());
-                if (totalCost > 0) economy.deposit(player, totalCost);
+                // Never refund a unit whose commands already started: its rewards may have been delivered.
+                int chargedUnits = completed + 1;
+                int refundUnits = amount - chargedUnits;
+                if (unitCost > 0 && refundUnits > 0) economy.deposit(player, unitCost * refundUnits);
+                manager.addPurchaseCount(player.getUniqueId(), item.getId(), chargedUnits);
                 playSound(player, configManager.getSoundError());
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Purchase failed! You have been refunded."));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                        "<red>Purchase failed after " + completed + "/" + amount
+                                + ". Units that never started were refunded."));
                 return;
             }
 

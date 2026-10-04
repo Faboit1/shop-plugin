@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -145,6 +146,11 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 .build());
 
         player.openInventory(inv);
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof ConfirmationGUI) event.setCancelled(true);
     }
 
     @EventHandler
@@ -282,8 +288,9 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
+            int completed = 0;
             try {
-                for (int i = 0; i < amount; i++) {
+                for (; completed < amount; completed++) {
                     for (String cmd : shopItem.getCommands()) {
                         String processed = cmd
                                 .replace("{player}", player.getName())
@@ -293,9 +300,15 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to dispatch command for shop item: " + e.getMessage());
-                economy.deposit(player, totalCost);
+                // Never refund a unit whose commands already started: its rewards may have been delivered.
+                int refundUnits = amount - completed - 1;
+                if (refundUnits > 0) {
+                    economy.deposit(player, shopItem.getBuyPrice() * refundUnits);
+                }
                 playSound(player, configManager.getSoundError());
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Purchase failed! You have been refunded."));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                        "<red>Purchase failed after " + completed + "/" + amount
+                                + ". Units that never started were refunded."));
                 refreshInventory(player, data);
                 return;
             }
