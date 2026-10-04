@@ -3,6 +3,7 @@ package com.donutshop.gui;
 import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
+import com.donutshop.util.Inventories;
 import com.donutshop.util.ItemBuilder;
 import com.donutshop.util.NumberFormatter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -331,7 +332,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         }
 
         Material mat = Material.valueOf(shopItem.getMaterial());
-        int playerHas = countItems(player, mat);
+        int playerHas = Inventories.countPlain(player, mat);
 
         if (playerHas <= 0) {
             playSound(player, configManager.getSoundError());
@@ -344,8 +345,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         int toSell = Math.min(amount, playerHas);
         double totalEarnings = shopItem.getSellPrice() * toSell;
 
-        removeItems(player, mat, toSell);
-        economy.deposit(player, totalEarnings);
+        if (!removeAndPay(player, mat, toSell, totalEarnings, economy)) return;
 
         playSound(player, configManager.getSoundSell());
         String materialName = getItemDisplayName(shopItem);
@@ -366,7 +366,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
         }
 
         Material mat = Material.valueOf(shopItem.getMaterial());
-        int playerHas = countItems(player, mat);
+        int playerHas = Inventories.countPlain(player, mat);
 
         if (playerHas <= 0) {
             playSound(player, configManager.getSoundError());
@@ -378,8 +378,7 @@ public class CategoryGUI implements InventoryHolder, Listener {
 
         double totalEarnings = shopItem.getSellPrice() * playerHas;
 
-        removeItems(player, mat, playerHas);
-        economy.deposit(player, totalEarnings);
+        if (!removeAndPay(player, mat, playerHas, totalEarnings, economy)) return;
 
         playSound(player, configManager.getSoundSell());
         String materialName = getItemDisplayName(shopItem);
@@ -418,33 +417,13 @@ public class CategoryGUI implements InventoryHolder, Listener {
         } catch (IllegalArgumentException ignored) {}
     }
 
-    private int countItems(Player player, Material material) {
-        int count = 0;
-        for (ItemStack is : player.getInventory().getStorageContents()) {
-            if (is != null && is.getType() == material) {
-                count += is.getAmount();
-            }
-        }
-        return count;
-    }
-
-    private void removeItems(Player player, Material material, int amount) {
-        int remaining = amount;
-        ItemStack[] contents = player.getInventory().getStorageContents();
-        for (int i = 0; i < contents.length && remaining > 0; i++) {
-            ItemStack is = contents[i];
-            if (is != null && is.getType() == material) {
-                int stackAmount = is.getAmount();
-                if (stackAmount <= remaining) {
-                    remaining -= stackAmount;
-                    contents[i] = null;
-                } else {
-                    is.setAmount(stackAmount - remaining);
-                    remaining = 0;
-                }
-            }
-        }
-        player.getInventory().setStorageContents(contents);
+    private boolean removeAndPay(Player player, Material mat, int amount, double earnings, EconomyManager economy) {
+        Inventories.removePlain(player, mat, amount);
+        if (economy.deposit(player, earnings)) return true;
+        Inventories.give(player, mat, amount);
+        playSound(player, configManager.getSoundError());
+        player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Transaction failed! Your items were returned."));
+        return false;
     }
 
     private String formatMaterialName(Material material) {

@@ -3,6 +3,7 @@ package com.donutshop.gui;
 import com.donutshop.DonutShop;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
+import com.donutshop.util.Inventories;
 import com.donutshop.util.ItemBuilder;
 import com.donutshop.util.NumberFormatter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -251,14 +252,8 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
                 return;
             }
 
-            ItemStack itemStack = new ItemStack(mat, amount);
-            java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(itemStack);
-
-            if (!leftover.isEmpty()) {
-                int notAdded = 0;
-                for (ItemStack left : leftover.values()) {
-                    notAdded += left.getAmount();
-                }
+            int notAdded = Inventories.give(player, mat, amount);
+            if (notAdded > 0) {
                 double refund = shopItem.getBuyPrice() * notAdded;
                 economy.deposit(player, refund);
                 amount -= notAdded;
