@@ -24,8 +24,9 @@ public class HourlyItemManager {
 
     private final DonutShop plugin;
 
-    private List<HourlyItem> itemPool = new ArrayList<>();
-    private List<HourlyItem> currentItems = new ArrayList<>();
+    // Written on the global region thread, read on player region threads (Folia).
+    private volatile List<HourlyItem> itemPool = new ArrayList<>();
+    private volatile List<HourlyItem> currentItems = new ArrayList<>();
     private ScheduledTask scheduledTask;
 
     /** Tracks how many times each player has purchased each item in the current hour. */
@@ -72,11 +73,12 @@ public class HourlyItemManager {
         }
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
-        itemPool.clear();
+        List<HourlyItem> newPool = new ArrayList<>();
 
         ConfigurationSection itemsSection = config.getConfigurationSection("items");
         if (itemsSection == null) {
             plugin.getLogger().warning("[HourlyShop] No 'items' section found in hourly-items.yml");
+            itemPool = newPool;
             return;
         }
 
@@ -89,7 +91,13 @@ public class HourlyItemManager {
             String name = sec.getString("name", id);
             List<String> lore = sec.getStringList("lore");
             int weight = sec.getInt("weight", 100);
-            double cost = parseCost(sec.getString("cost", "-1"));
+            String rawCost = sec.getString("cost", "-1");
+            double cost = parseCost(rawCost);
+            if (Double.isNaN(cost)) {
+                plugin.getLogger().severe("[HourlyShop] Item '" + id + "' has an invalid cost '" + rawCost
+                        + "' and was skipped. Use a number like 5000000 or 5m, or 'free'.");
+                continue;
+            }
 
             // Accept either a single "command" key or a "commands" list
             List<String> commands;
@@ -102,11 +110,12 @@ public class HourlyItemManager {
                 commands = Collections.emptyList();
             }
 
-            itemPool.add(new HourlyItem(id, type, material, name, lore, weight, cost, commands,
+            newPool.add(new HourlyItem(id, type, material, name, lore, weight, cost, commands,
                     sec.getInt("purchaselimit", -1)));
         }
 
-        plugin.getLogger().info("[HourlyShop] Loaded " + itemPool.size() + " items into the hourly pool.");
+        itemPool = newPool;
+        plugin.getLogger().info("[HourlyShop] Loaded " + newPool.size() + " items into the hourly pool.");
     }
 
     // ── Item selection & announcements ────────────────────────
@@ -228,21 +237,23 @@ public class HourlyItemManager {
 
     /**
      * Parse a cost string such as "5000000", "5m", "50k", "2b", or "1t".
-     * Returns -1 for free / unparseable values.
+     * Returns -1 for free, NaN for anything invalid so a typo can never make an item free.
      */
     private static double parseCost(String cost) {
-        if (cost == null || cost.isEmpty()) return -1;
+        if (cost == null || cost.isBlank()) return Double.NaN;
         cost = cost.trim().toLowerCase();
         if (cost.equals("-1") || cost.equals("free")) return -1;
-        try {
-            if (cost.endsWith("t")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000_000L;
-            if (cost.endsWith("b")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000_000;
-            if (cost.endsWith("m")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000_000;
-            if (cost.endsWith("k")) return Double.parseDouble(cost.substring(0, cost.length() - 1)) * 1_000;
-            return Double.parseDouble(cost);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
+        if (!cost.matches("^[0-9]+(\\.[0-9]+)?[kmbt]?$")) return Double.NaN;
+        double multiplier = switch (cost.charAt(cost.length() - 1)) {
+            case 't' -> 1_000_000_000_000d;
+            case 'b' -> 1_000_000_000d;
+            case 'm' -> 1_000_000d;
+            case 'k' -> 1_000d;
+            default -> 1d;
+        };
+        String number = multiplier == 1d ? cost : cost.substring(0, cost.length() - 1);
+        double value = Double.parseDouble(number) * multiplier;
+        return Double.isFinite(value) ? value : Double.NaN;
     }
 
     // ── Accessors ─────────────────────────────────────────────
@@ -250,6 +261,11 @@ public class HourlyItemManager {
     /** The items currently on offer in the hourly shop. */
     public List<HourlyItem> getCurrentItems() {
         return Collections.unmodifiableList(currentItems);
+    }
+
+    /** Identity check: a reload creates new instances, so stale references from before it are rejected. */
+    public boolean isOnOffer(HourlyItem item) {
+        return currentItems.contains(item);
     }
 
     /** The full weighted pool loaded from hourly-items.yml. */

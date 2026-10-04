@@ -79,7 +79,8 @@ public class ConfigManager {
     private double hourlyRareSoundVolume;
     private double hourlyRareSoundPitch;
 
-    private final Map<String, CategoryConfig> categories = new LinkedHashMap<>();
+    // Swapped as a whole on reload: GUI clicks read it from other Folia region threads.
+    private volatile Map<String, CategoryConfig> categories = new LinkedHashMap<>();
 
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -117,7 +118,7 @@ public class ConfigManager {
         soundNavigate = config.getString("settings.sounds.navigate", "UI_BUTTON_CLICK");
 
         // Transactions
-        shiftClickAmount = config.getInt("settings.transactions.shift-click-amount", 64);
+        shiftClickAmount = Math.max(1, config.getInt("settings.transactions.shift-click-amount", 64));
         middleClickSellAll = config.getBoolean("settings.transactions.middle-click-sell-all", true);
     }
 
@@ -265,10 +266,13 @@ public class ConfigManager {
     // ── Categories ────────────────────────────────────────────
 
     private void loadCategories(FileConfiguration config) {
-        categories.clear();
+        Map<String, CategoryConfig> loaded = new LinkedHashMap<>();
 
         ConfigurationSection menuCats = config.getConfigurationSection("main-menu.categories");
-        if (menuCats == null) return;
+        if (menuCats == null) {
+            categories = loaded;
+            return;
+        }
 
         for (String id : menuCats.getKeys(false)) {
             ConfigurationSection iconSection = menuCats.getConfigurationSection(id);
@@ -312,7 +316,40 @@ public class ConfigManager {
                 cat.items = Collections.emptyList();
             }
 
-            categories.put(id, cat);
+            loaded.put(id, cat);
+        }
+        warnAboutArbitrage(loaded);
+        categories = loaded;
+    }
+
+    /** Selling a material for more than it costs, or across currencies, is an unlimited money/currency source. */
+    private void warnAboutArbitrage(Map<String, CategoryConfig> loaded) {
+        Map<String, Map<String, double[]>> byMaterial = new LinkedHashMap<>();
+        for (CategoryConfig cat : loaded.values()) {
+            String currency = cat.hasCurrencyOverride() ? cat.currencyProvider + ":" + cat.currencyId : "default";
+            for (ShopItem item : cat.items) {
+                if (item.isCommandItem()) continue;
+                double[] range = byMaterial.computeIfAbsent(item.material, k -> new LinkedHashMap<>())
+                        .computeIfAbsent(currency, k -> new double[]{Double.MAX_VALUE, -1});
+                if (item.buyPrice >= 0) range[0] = Math.min(range[0], item.buyPrice);
+                if (item.sellPrice >= 0) range[1] = Math.max(range[1], item.sellPrice);
+            }
+        }
+        for (Map.Entry<String, Map<String, double[]>> mat : byMaterial.entrySet()) {
+            for (Map.Entry<String, double[]> sold : mat.getValue().entrySet()) {
+                if (sold.getValue()[1] < 0) continue;
+                for (Map.Entry<String, double[]> bought : mat.getValue().entrySet()) {
+                    if (bought.getValue()[0] == Double.MAX_VALUE) continue;
+                    if (!bought.getKey().equals(sold.getKey())) {
+                        plugin.getLogger().warning("[Shop] " + mat.getKey() + " can be bought with '" + bought.getKey()
+                                + "' and sold for '" + sold.getKey() + "': players can convert between these currencies.");
+                    } else if (sold.getValue()[1] > bought.getValue()[0]) {
+                        plugin.getLogger().severe("[Shop] " + mat.getKey() + " sells for " + sold.getValue()[1]
+                                + " but can be bought for " + bought.getValue()[0] + " (" + sold.getKey()
+                                + "): unlimited money exploit. Fix the prices.");
+                    }
+                }
+            }
         }
     }
 
@@ -335,6 +372,12 @@ public class ConfigManager {
             }
             item.buyPrice = map.containsKey("buy-price") ? ((Number) map.get("buy-price")).doubleValue() : -1;
             item.sellPrice = map.containsKey("sell-price") ? ((Number) map.get("sell-price")).doubleValue() : -1;
+            if (!Double.isFinite(item.buyPrice) || !Double.isFinite(item.sellPrice)) {
+                plugin.getLogger().severe("[Shop] Item " + item.material + " in '" + catSection.getName()
+                        + "' has a non-finite price; buying and selling it are disabled.");
+                item.buyPrice = -1;
+                item.sellPrice = -1;
+            }
             item.slot = map.containsKey("slot") ? ((Number) map.get("slot")).intValue() : -1;
             item.amount = map.containsKey("amount") ? ((Number) map.get("amount")).intValue() : 1;
             item.customModelData = map.containsKey("custom-model-data") ? ((Number) map.get("custom-model-data")).intValue() : -1;
