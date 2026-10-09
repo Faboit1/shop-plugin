@@ -1,0 +1,66 @@
+# ============================================================
+#  DonutShop - Halloween Event
+#  Players earn pumpkins for playtime and spend them in the
+#  "halloween" shop category (see config.yml).
+#  Reload with /shop reload.
+# ============================================================
+
+# Turn the whole event (pumpkin timer, intro dialog, /halloween) on or off
+enabled: true
+
+# Currency the pumpkins are paid in. Create it in ExcellentEconomy
+# (plugins/ExcellentEconomy/currencies/pumpkins.yml) before enabling.
+currency:
+  provider: excellenteconomy
+  id: pumpkins
+  symbol: "🎃"
+
+playtime-reward:
+  # Seconds of playtime per reward (300 = every 5 minutes)
+  interval-seconds: 300
+  # Pumpkins given each interval
+  amount: 1
+  # Players idle for this many seconds stop earning until they move again (0 = never)
+  afk-timeout-seconds: 300
+  # Placeholders: {amount}, {balance}, {symbol}
+  message: "<#FF7518>🎃 <white>+{amount} Pumpkin! <gray>You now have <#FF7518>{balance} 🎃 <dark_gray>· <gray>/shop halloween"
+  # Sounds played on each reward (any vanilla sound key)
+  sounds:
+    witch:
+      key: "entity.witch.celebrate"
+      volume: 0.7
+      pitch: 1.3
+    chime:
+      key: "block.note_block.chime"
+      volume: 0.8
+      pitch: 1.4
+
+intro-dialog:
+  enabled: true
+  # Seconds after joining before the dialog opens
+  delay-seconds: 10
+  # Show the dialog only the first time a player joins during the event
+  show-once: true
+  width: 280
+  title: "<#FF7518><bold>🎃 Halloween Event 🎃</bold>"
+  body:
+    - "<gray>Something spooky is happening on <#FFD700>Cheese SMP</#FFD700>..."
+    - "<white>You earn <#FF7518><bold>1 Pumpkin 🎃</bold></#FF7518> for every <white>5 minutes</white> you play. Your pumpkins show on your scoreboard."
+    - "<white>Trade them in at <#FF7518>/shop</#FF7518> → <#FF7518>Halloween</#FF7518>:"
+    - "<#FF7518>100 🎃</#FF7518> <dark_gray>→</dark_gray> <#00FC00>$100,000</#00FC00>\n<#FF7518>150 🎃</#FF7518> <dark_gray>→</dark_gray> <light_purple>Epic Key</light_purple>\n<#FF7518>1,000 🎃</#FF7518> <dark_gray>→</dark_gray> <#FF7518><bold>Halloween Key</bold></#FF7518>"
+    - "<gray>The <#FF7518>Halloween Crate</#FF7518> has exclusive spooky loot. Check your progress any time with <white>/halloween</white>."
+  open-button:
+    label: "<#FF7518><bold>Open Halloween Shop</bold>"
+    tooltip: "<gray>Runs /shop halloween"
+    command: "/shop halloween"
+  close-button:
+    label: "<gray>Close"
+  sounds:
+    ambience:
+      key: "ambient.cave"
+      volume: 0.8
+      pitch: 1.0
+    bell:
+      key: "block.bell.use"
+      volume: 0.6
+      pitch: 0.6

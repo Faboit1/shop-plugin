@@ -18,6 +18,12 @@ commands:
     aliases:
       - donutshop
       - ds
+  halloween:
+    description: Show the Halloween event info and your pumpkin progress
+    usage: /<command>
+    permission: donutshop.use
+    aliases:
+      - spooky
 
 permissions:
   donutshop.use:

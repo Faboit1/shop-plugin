@@ -306,6 +306,14 @@ public class ConfigManager {
                     cat.currencySymbol = currSec.getString("symbol", null);
                 }
 
+                // Per-category message overrides (e.g. "not enough pumpkins" instead of "money")
+                ConfigurationSection msgSec = catSection.getConfigurationSection("messages");
+                if (msgSec != null) {
+                    for (String key : msgSec.getKeys(false)) {
+                        cat.messages.put(key, msgSec.getString(key, ""));
+                    }
+                }
+
                 cat.items = loadItems(catSection);
             } else {
                 cat.guiTitle = id;
@@ -424,6 +432,15 @@ public class ConfigManager {
         return msg.replace("{prefix}", prefix);
     }
 
+    /** Like {@link #getMessage(String)}, but a category's own {@code messages} section wins. */
+    public String getMessage(String key, CategoryConfig category) {
+        if (category != null && category.messages.containsKey(key)) {
+            String prefix = prefixEnabled ? messages.getOrDefault("prefix", "") : "";
+            return category.messages.get(key).replace("{prefix}", prefix);
+        }
+        return getMessage(key);
+    }
+
     public String getMainMenuTitle() {
         return mainMenuTitle;
     }
@@ -535,6 +552,7 @@ public class ConfigManager {
         private String currencyProvider;
         private String currencyId;
         private String currencySymbol;
+        private final Map<String, String> messages = new LinkedHashMap<>();
 
         public String getId() { return id; }
         public int getSlot() { return slot; }
