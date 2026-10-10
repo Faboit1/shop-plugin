@@ -69,10 +69,16 @@ intro-dialog:
     - "<white>Trade them in at <#FF7518>/shop</#FF7518> → <#FF7518>Halloween</#FF7518>:"
     - "<#FF7518>100 🎃</#FF7518> <dark_gray>→</dark_gray> <#00FC00>$100,000</#00FC00>\n<#FF7518>150 🎃</#FF7518> <dark_gray>→</dark_gray> <light_purple>Epic Key</light_purple>\n<#FF7518>1,000 🎃</#FF7518> <dark_gray>→</dark_gray> <#FF7518><bold>Halloween Key</bold></#FF7518>"
     - "<gray>The <#FF7518>Halloween Crate</#FF7518> has exclusive spooky loot. Check your progress any time with <white>/halloween</white>."
+    - "<#FFD700>Can't wait?</#FFD700> <white>Pumpkins 🎃 and Halloween Keys are also available on our store: <#FFD700>/buy</#FFD700>"
   open-button:
     label: "<#FF7518><bold>Open Halloween Shop</bold>"
     tooltip: "<gray>Runs /shop halloween"
     command: "/shop halloween"
+  # Optional third button; remove the label to hide it
+  store-button:
+    label: "<#FFD700><bold>Visit Store</bold>"
+    tooltip: "<gray>Runs /buy"
+    command: "/buy"
   close-button:
     label: "<gray>Close"
   sounds:

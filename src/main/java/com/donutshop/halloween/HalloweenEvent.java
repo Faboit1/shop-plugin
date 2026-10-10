@@ -308,12 +308,24 @@ public class HalloweenEvent implements Listener {
                 .width(150)
                 .build();
 
+        DialogType type;
+        if (s.dialogStoreLabel.isEmpty()) {
+            type = DialogType.confirmation(open, close);
+        } else {
+            ActionButton store = ActionButton.builder(MM.deserialize(s.dialogStoreLabel))
+                    .tooltip(MM.deserialize(s.dialogStoreTooltip))
+                    .width(150)
+                    .action(DialogAction.staticAction(ClickEvent.runCommand(s.dialogStoreCommand)))
+                    .build();
+            type = DialogType.multiAction(List.of(open, store)).exitAction(close).columns(2).build();
+        }
+
         return Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(MM.deserialize(s.dialogTitle))
                         .canCloseWithEscape(true)
                         .body(body)
                         .build())
-                .type(DialogType.confirmation(open, close)));
+                .type(type));
     }
 
     // ── Settings ──────────────────────────────────────────────
@@ -347,6 +359,9 @@ public class HalloweenEvent implements Listener {
         String dialogOpenTooltip;
         String dialogOpenCommand;
         String dialogCloseLabel;
+        String dialogStoreLabel;
+        String dialogStoreTooltip;
+        String dialogStoreCommand;
         List<Sound> dialogSounds;
 
         static Settings load(YamlConfiguration c) {
@@ -381,6 +396,10 @@ public class HalloweenEvent implements Listener {
             s.dialogOpenTooltip = c.getString("intro-dialog.open-button.tooltip", "<gray>/shop halloween");
             s.dialogOpenCommand = c.getString("intro-dialog.open-button.command", "/shop halloween");
             s.dialogCloseLabel = c.getString("intro-dialog.close-button.label", "<gray>Close");
+            // Optional; leave the label empty for a two-button dialog
+            s.dialogStoreLabel = c.getString("intro-dialog.store-button.label", "");
+            s.dialogStoreTooltip = c.getString("intro-dialog.store-button.tooltip", "");
+            s.dialogStoreCommand = c.getString("intro-dialog.store-button.command", "/buy");
             s.dialogSounds = loadSounds(c.getConfigurationSection("intro-dialog.sounds"));
             return s;
         }
