@@ -236,7 +236,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
         if (!economy.has(player, totalCost)) {
             playSound(player, configManager.getSoundError());
-            String msg = configManager.getMessage("not-enough-money");
+            String msg = configManager.getMessage("not-enough-money", data.returnCategory);
             if (msg.isEmpty()) msg = "<red>You don't have enough money!";
             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
             return;
@@ -261,7 +261,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
                 if (amount <= 0) {
                     playSound(player, configManager.getSoundError());
-                    String msg = configManager.getMessage("inventory-full");
+                    String msg = configManager.getMessage("inventory-full", data.returnCategory);
                     if (msg.isEmpty()) msg = "<red>Your inventory is full!";
                     player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
                     return;
@@ -270,7 +270,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
             playSound(player, configManager.getSoundBuy());
             String itemName = getItemDisplayName(shopItem);
-            String msg = configManager.getMessage("buy-success")
+            String msg = configManager.getMessage("buy-success", data.returnCategory)
                     .replace("{amount}", String.valueOf(amount))
                     .replace("{item}", itemName)
                     .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));
@@ -310,7 +310,7 @@ public class ConfirmationGUI implements InventoryHolder, Listener {
 
             playSound(player, configManager.getSoundBuy());
             String itemName = getItemDisplayName(shopItem);
-            String msg = configManager.getMessage("buy-success")
+            String msg = configManager.getMessage("buy-success", data.returnCategory)
                     .replace("{amount}", String.valueOf(amount))
                     .replace("{item}", itemName)
                     .replace("{price}", currencySymbol + NumberFormatter.format(totalCost));

@@ -1,5 +1,6 @@
 package com.donutshop;
 
+import com.donutshop.commands.HalloweenCommand;
 import com.donutshop.commands.ShopCommand;
 import com.donutshop.config.ConfigManager;
 import com.donutshop.economy.EconomyManager;
@@ -8,6 +9,7 @@ import com.donutshop.gui.ConfirmationGUI;
 import com.donutshop.gui.HourlyConfirmationGUI;
 import com.donutshop.gui.HourlyShopGUI;
 import com.donutshop.gui.ShopGUI;
+import com.donutshop.halloween.HalloweenEvent;
 import com.donutshop.hourly.HourlyItemManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -26,6 +28,7 @@ public class DonutShop extends JavaPlugin {
     private HourlyItemManager hourlyItemManager;
     private HourlyShopGUI hourlyShopGUI;
     private HourlyConfirmationGUI hourlyConfirmationGUI;
+    private HalloweenEvent halloweenEvent;
 
     @Override
     public void onEnable() {
@@ -61,7 +64,10 @@ public class DonutShop extends JavaPlugin {
             }
 
             initCategoryEconomies();
+            halloweenEvent.start();
         }, 1);
+
+        halloweenEvent = new HalloweenEvent(this);
 
         // Initialize GUI
         shopGUI = new ShopGUI(this, configManager);
@@ -78,11 +84,13 @@ public class DonutShop extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ConfirmationGUI(this, configManager), this);
         getServer().getPluginManager().registerEvents(hourlyShopGUI, this);
         getServer().getPluginManager().registerEvents(hourlyConfirmationGUI, this);
+        getServer().getPluginManager().registerEvents(halloweenEvent, this);
 
         // Register commands
         ShopCommand shopCommand = new ShopCommand(this);
         getCommand("shop").setExecutor(shopCommand);
         getCommand("shop").setTabCompleter(shopCommand);
+        getCommand("halloween").setExecutor(new HalloweenCommand(halloweenEvent));
 
         getLogger().info("DonutShop has been enabled!");
         getLogger().info("Economy provider: " + configManager.getEconomyProvider());
@@ -90,6 +98,9 @@ public class DonutShop extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (halloweenEvent != null) {
+            halloweenEvent.stopAll();
+        }
         if (hourlyItemManager != null) {
             hourlyItemManager.shutdown();
         }
@@ -171,5 +182,6 @@ public class DonutShop extends JavaPlugin {
         if (hourlyItemManager != null) {
             hourlyItemManager.reload();
         }
+        halloweenEvent.reload();
     }
 }
