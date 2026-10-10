@@ -20,12 +20,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Halloween event: players earn a pumpkin currency for time played, hear about it
  * through a one-time intro dialog, and spend it in the shop's Halloween category.
+ *
+ * Killing a player also pays pumpkins, at most once per victim per cooldown window.
  *
  * Progress towards the next pumpkin lives in the player's PDC so it survives relogs.
  * Every per-player task runs on that player's entity scheduler (Folia-safe).
@@ -47,6 +51,9 @@ public class HalloweenEvent implements Listener {
     private final NamespacedKey progressKey;
     private final NamespacedKey dialogSeenKey;
     private final Map<UUID, ScheduledTask> timers = new ConcurrentHashMap<>();
+    /** "killerUUID|victimUUID" -> epoch millis of the last rewarded kill. Persisted to halloween-kills.yml. */
+    private final Map<String, Long> killCooldowns = new ConcurrentHashMap<>();
+    private final File killsFile;
 
     private volatile Settings settings;
     private volatile EconomyManager economy;
@@ -56,7 +63,9 @@ public class HalloweenEvent implements Listener {
         this.plugin = plugin;
         this.progressKey = new NamespacedKey(plugin, "halloween_progress");
         this.dialogSeenKey = new NamespacedKey(plugin, "halloween_dialog_seen");
+        this.killsFile = new File(plugin.getDataFolder(), "halloween-kills.yml");
         loadSettings();
+        loadKillCooldowns();
     }
 
     // ── Lifecycle ─────────────────────────────────────────────
@@ -78,6 +87,7 @@ public class HalloweenEvent implements Listener {
     public void stopAll() {
         timers.values().forEach(ScheduledTask::cancel);
         timers.clear();
+        writeKillCooldowns();
     }
 
     public boolean isEnabled() {
@@ -141,6 +151,87 @@ public class HalloweenEvent implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         ScheduledTask task = timers.remove(event.getPlayer().getUniqueId());
         if (task != null) task.cancel();
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onDeath(PlayerDeathEvent event) {
+        Settings s = settings;
+        if (!s.enabled || !s.killRewardEnabled || economy == null) return;
+        Player victim = event.getEntity();
+        Player killer = victim.getKiller();
+        if (killer == null || killer.getUniqueId().equals(victim.getUniqueId())) return;
+
+        String key = killer.getUniqueId() + "|" + victim.getUniqueId();
+        long now = System.currentTimeMillis();
+        long cooldownMillis = s.killCooldownSeconds * 1000L;
+        long[] lastReward = {-1};
+        // Claim the cooldown atomically so two deaths in a row can't both pay.
+        killCooldowns.compute(key, (k, last) -> {
+            if (last != null && now - last < cooldownMillis) {
+                lastReward[0] = last;
+                return last;
+            }
+            return now;
+        });
+        String victimName = victim.getName();
+
+        if (lastReward[0] >= 0) {
+            if (!s.killCooldownMessage.isEmpty()) {
+                long leftSeconds = (lastReward[0] + cooldownMillis - now) / 1000L;
+                String msg = s.killCooldownMessage
+                        .replace("{victim}", victimName)
+                        .replace("{time}", (leftSeconds / 3600) + "h " + (leftSeconds % 3600 / 60) + "m");
+                killer.getScheduler().run(plugin, t -> killer.sendMessage(MM.deserialize(msg)), null);
+            }
+            return;
+        }
+
+        // The killer may be in another region on Folia: pay them on their own thread.
+        if (killer.getScheduler().run(plugin, t -> rewardKill(killer, victimName), null) == null) {
+            killCooldowns.remove(key, now);
+            return;
+        }
+        plugin.getServer().getAsyncScheduler().runNow(plugin, t -> writeKillCooldowns());
+    }
+
+    private void rewardKill(Player killer, String victimName) {
+        Settings s = settings;
+        EconomyManager econ = economy;
+        if (econ == null || !econ.deposit(killer, s.killRewardAmount)) {
+            plugin.getLogger().warning("[Halloween] Could not give " + killer.getName() + " their kill pumpkins.");
+            return;
+        }
+        killer.sendMessage(MM.deserialize(s.killMessage
+                .replace("{amount}", NumberFormatter.format(s.killRewardAmount))
+                .replace("{victim}", victimName)
+                .replace("{balance}", NumberFormatter.format(econ.getBalance(killer)))
+                .replace("{symbol}", s.currencySymbol)));
+        for (Sound sound : s.killSounds) {
+            killer.playSound(sound, Sound.Emitter.self());
+        }
+    }
+
+    private void loadKillCooldowns() {
+        if (!killsFile.exists()) return;
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(killsFile);
+        long cutoff = System.currentTimeMillis() - settings.killCooldownSeconds * 1000L;
+        for (String key : yaml.getKeys(false)) {
+            long time = yaml.getLong(key);
+            if (time > cutoff) killCooldowns.put(key, time);
+        }
+    }
+
+    /** Writes the live map (not a snapshot), so a late-running save never restores stale state. */
+    private synchronized void writeKillCooldowns() {
+        long cutoff = System.currentTimeMillis() - settings.killCooldownSeconds * 1000L;
+        killCooldowns.values().removeIf(time -> time <= cutoff);
+        YamlConfiguration yaml = new YamlConfiguration();
+        killCooldowns.forEach(yaml::set);
+        try {
+            yaml.save(killsFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("[Halloween] Could not save kill cooldowns: " + e.getMessage());
+        }
     }
 
     // ── Playtime reward ───────────────────────────────────────
@@ -239,6 +330,13 @@ public class HalloweenEvent implements Listener {
         String rewardMessage;
         List<Sound> rewardSounds;
 
+        boolean killRewardEnabled;
+        double killRewardAmount;
+        long killCooldownSeconds;
+        String killMessage;
+        String killCooldownMessage;
+        List<Sound> killSounds;
+
         boolean dialogEnabled;
         boolean dialogShowOnce;
         long dialogDelayTicks;
@@ -264,6 +362,14 @@ public class HalloweenEvent implements Listener {
             s.rewardMessage = c.getString("playtime-reward.message",
                     "<#FF7518>🎃 <white>+{amount} Pumpkin! <gray>You now have <#FF7518>{balance} 🎃");
             s.rewardSounds = loadSounds(c.getConfigurationSection("playtime-reward.sounds"));
+
+            s.killRewardEnabled = c.getBoolean("kill-reward.enabled", true);
+            s.killRewardAmount = Math.max(0, c.getDouble("kill-reward.amount", 3));
+            s.killCooldownSeconds = Math.max(0, c.getLong("kill-reward.same-victim-cooldown-seconds", 86400));
+            s.killMessage = c.getString("kill-reward.message",
+                    "<#FF7518>🎃 <white>+{amount} Pumpkins <gray>for killing <white>{victim}<gray>! You now have <#FF7518>{balance} 🎃");
+            s.killCooldownMessage = c.getString("kill-reward.cooldown-message", "");
+            s.killSounds = loadSounds(c.getConfigurationSection("kill-reward.sounds"));
 
             s.dialogEnabled = c.getBoolean("intro-dialog.enabled", true);
             s.dialogShowOnce = c.getBoolean("intro-dialog.show-once", true);

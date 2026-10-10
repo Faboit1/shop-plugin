@@ -21,6 +21,7 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 Configured in `halloween.yml` (reload with `/shop reload`):
 
 - **Pumpkin currency** — players earn 🎃 for playtime (default 1 every 5 minutes, idle players don't earn). Paid into an ExcellentEconomy currency (`pumpkins`), with a chat message and sounds on every reward.
+- **Kill reward** — killing a player gives 3 🎃, but only once per victim every 24 hours (cooldowns are saved in `halloween-kills.yml`, so restarts don't reset them).
 - **Intro dialog** — a native Paper dialog opens 10 seconds after joining (once per player by default) explaining the event, with a button that opens `/shop halloween`.
 - **Halloween shop category** — a normal category with a `currency` override and command items, so pumpkins buy money and crate keys.
 - **`/halloween`** — shows your pumpkin balance, time until the next one, and reopens the dialog.
