@@ -169,6 +169,19 @@ main-menu:
         - ""
         - "<yellow>ᴄʟɪᴄᴋ ᴛᴏ ʙʀᴏᴡsᴇ!"
       icon-glow: true
+    halloween:
+      slot: 22
+      icon-material: JACK_O_LANTERN
+      icon-name: "<#FF7518><bold>🎃 Halloween Shop</bold>"
+      icon-lore:
+        - ""
+        - "<gray>Trade your pumpkins 🎃 for"
+        - "<gray>money and crate keys!"
+        - ""
+        - "<gray>Earn 1 🎃 every 5 minutes played."
+        - ""
+        - "<#FF7518>Click to browse!"
+      icon-glow: true
 
 # ============================================================
 #  ᴄᴀᴛᴇɢᴏʀʏ ɢᴜɪ ᴅᴇғᴀᴜʟᴛs
@@ -672,3 +685,52 @@ categories:
         buy-price: 50.0
         slot: -1
 
+  # ============================================================
+  #  Halloween Shop
+  #  Uses the "pumpkins" currency from ExcellentEconomy, earned
+  #  through playtime (see halloween.yml)
+  # ============================================================
+  halloween:
+    title: "🎃 Halloween Shop"
+    size: 27
+    filler:
+      enabled: true
+      material: ORANGE_STAINED_GLASS_PANE
+      name: " "
+    currency:
+      provider: excellenteconomy
+      id: pumpkins
+      symbol: "🎃"
+    # Overrides of the global messages, so pumpkin purchases don't talk about money
+    messages:
+      buy-success: "{prefix}<white>You bought <gray>{amount}x {item} <white>for <#FF7518>{price}"
+      not-enough-money: "{prefix}<red>You don't have enough pumpkins 🎃! <gray>You earn 1 every 5 minutes played."
+    items:
+      - type: COMMAND
+        material: GOLD_INGOT
+        name: "<#00FC00>$100,000"
+        lore:
+          - ""
+          - "<gray>Turn your pumpkins into cash."
+        buy-price: 100
+        slot: 11
+        command: "money give {player} 100000"
+      - type: COMMAND
+        material: TRIPWIRE_HOOK
+        name: "<#E39FFF><bold>Epic Crate Key"
+        lore:
+          - ""
+          - "<gray>One key for the Epic Crate."
+        buy-price: 150
+        slot: 13
+        command: "crate key give {player} epic 1"
+      - type: COMMAND
+        material: TRIPWIRE_HOOK
+        name: "<#FF7518><bold>🎃 Halloween Crate Key"
+        lore:
+          - ""
+          - "<gray>One key for the limited"
+          - "<gray>Halloween Crate!"
+        buy-price: 1000
+        slot: 15
+        command: "crate key give {player} halloween 1"

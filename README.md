@@ -16,6 +16,18 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 - **Sound Effects** — Configurable sounds for buy, sell, error, navigation, and menu open
 - **Transaction Settings** — Configurable shift-click amounts and middle-click sell-all toggle
 
+## Halloween Event
+
+Configured in `halloween.yml` (reload with `/shop reload`):
+
+- **Pumpkin currency** — players earn 🎃 for playtime (default 1 every 5 minutes, idle players don't earn). Paid into an ExcellentEconomy currency (`pumpkins`), with a chat message and sounds on every reward.
+- **Kill reward** — killing a player gives 3 🎃, but only once per victim every 24 hours (cooldowns are saved in `halloween-kills.yml`, so restarts don't reset them).
+- **Intro dialog** — a native Paper dialog opens 10 seconds after joining (once per player by default) explaining the event, with a button that opens `/shop halloween`.
+- **Halloween shop category** — a normal category with a `currency` override and command items, so pumpkins buy money and crate keys.
+- **`/halloween`** — shows your pumpkin balance, time until the next one, and reopens the dialog.
+
+Categories can also override messages with a `messages:` section (`buy-success`, `not-enough-money`, `inventory-full`), e.g. to say "pumpkins" instead of "money".
+
 ## Commands
 
 | Command | Description | Permission |
@@ -23,6 +35,7 @@ A fully customizable DonutSMP-style shop plugin for Paper/Spigot 1.21+.
 | `/shop` | Open the shop GUI | `donutshop.use` |
 | `/shop <category>` | Open a specific category directly | `donutshop.use` |
 | `/shop reload` | Reload the config | `donutshop.reload` |
+| `/halloween` | Halloween event info and pumpkin progress | `donutshop.use` |
 
 ## Permissions
 
@@ -50,8 +63,8 @@ All configuration is in `config.yml`. You can customize:
 
 ## Dependencies
 
-- **Required:** Paper 1.21+ (or compatible fork)
-- **Optional:** Vault (with an economy provider), CoinsEngine
+- **Required:** Paper 1.21.6+ (or compatible fork; dialogs need 1.21.6+)
+- **Optional:** Vault (with an economy provider), CoinsEngine, ExcellentEconomy (needed for the pumpkin currency)
 
 ## Building
 
